@@ -1,0 +1,35 @@
+:root {
+  /* Color Palette — Obsidian Turf, Clubhouse Cream, Burnished Brass */
+  --bg-primary: #070a08;
+  --bg-elevated: #0e1310;
+  --bg-surface: #121814;
+  --fg-primary: #f3efe6;
+  --fg-secondary: rgba(243, 239, 230, 0.78);
+  --fg-muted: #8f9891;
+  --fg-dim: #3a423d;
+
+  --accent-gold: #c6a15b;
+  --accent-gold-soft: rgba(198, 161, 91, 0.16);
+  --accent-emerald: #1b4332;
+
+  /* Hairlines & Glass */
+  --border-subtle: rgba(243, 239, 230, 0.1);
+  --border-strong: rgba(243, 239, 230, 0.22);
+  --glass-bg: rgba(12, 17, 14, 0.62);
+  --glass-border: rgba(243, 239, 230, 0.13);
+
+  /* Typography */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Motion */
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-ui: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Radii & Spacing */
+  --radius-card: 28px;
+  --radius-pill: 9999px;
+  --gutter: clamp(1.25rem, 4vw, 4rem);
+  --max-width: 1380px;
+}
