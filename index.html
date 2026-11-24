@@ -4,17 +4,65 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#070A08" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>AURELIA® — Private Championship Golf Sanctuary &amp; Performance Lab</title>
     <meta
       name="description"
-      content="An ultra-private coastal championship golf sanctuary, Tour-grade biomechanics performance lab, and architectural clubhouse estate. Limited to 150 Founding Patrons."
+      content="An ultra-private $100M coastal championship golf sanctuary, 1,000-fps Tour biomechanics lab, and architectural clubhouse estate on the Monterey Peninsula. Limited to 150 Founding Patrons."
     />
+
+    <!-- Open Graph & Social Cards -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="AURELIA® — Private Championship Golf Sanctuary &amp; Performance Lab"
+    />
+    <meta
+      property="og:description"
+      content="Where Architecture Meets Championship Solitude. 18 coastal links holes, 1,000-fps Tour biomechanics forge, and 14 oceanfront suites."
+    />
+    <meta property="og:image" content="/images/aerial-18th.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="AURELIA® — Private Championship Golf Sanctuary &amp; Performance Lab"
+    />
+    <meta name="twitter:image" content="/images/aerial-18th.jpg" />
+
+    <!-- Hero Poster High-Priority Preload -->
+    <link rel="preload" as="image" href="/images/hero-links.jpg" fetchpriority="high" />
+
+    <!-- Editorial Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "GolfCourse",
+        "name": "AURELIA Links & Performance Lab",
+        "description": "Ultra-private coastal championship golf sanctuary and Tour-grade biomechanics performance lab on the Monterey Peninsula.",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Cypress Ridge Road",
+          "addressLocality": "Monterey",
+          "addressRegion": "CA",
+          "addressCountry": "US"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 36.5674,
+          "longitude": -121.9486
+        }
+      }
+    </script>
+
+    <!-- Zero White-Flash Inline Guard -->
     <style>
       html,
       body {
