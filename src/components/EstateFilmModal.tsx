@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Pause, Play, Volume2, VolumeX, X } from 'lucide-react';
-import { CINEMA_CHAPTERS } from '../data/cinemaChapters';
+import { CINEMA_CHAPTERS, selectAdaptiveVideo } from '../data/cinemaChapters';
 import {
   EDITORIAL_EASE,
   useModalLifecycle,
@@ -214,7 +214,7 @@ function EstateFilmTheatre({
           <video
             key={activeChapter.videoSrc}
             ref={videoRef}
-            src={activeChapter.videoSrc}
+            src={selectAdaptiveVideo(activeChapter.videoSrc, activeChapter.mobileVideoSrc)}
             poster={activeChapter.posterSrc}
             muted
             playsInline

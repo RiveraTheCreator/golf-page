@@ -5,7 +5,10 @@ import {
   EDITORIAL_EASE,
   usePrefersReducedMotion,
 } from './motion/motionHooks';
-import { CINEMA_CHAPTERS } from '../data/cinemaChapters';
+import {
+  CINEMA_CHAPTERS,
+  selectAdaptiveVideo,
+} from '../data/cinemaChapters';
 import {
   startCoastalSoundscape,
   type CoastalSoundscapeController,
@@ -16,9 +19,9 @@ interface CinemaReelSectionProps {
 }
 
 /**
- * Act IV — Crossfading Multi-Video Estate Atmosphere Switcher (MotionSites Technique #9).
- * Stacks 3 looping H.264 films and crossfades over 1000ms with input-lock protection,
- * off-screen IntersectionObserver auto-pause, and optional Web Audio coastal soundscape.
+ * Act IV — Crossfading Multi-Video Estate Atmosphere Switcher (1080p HD + Zero Contention).
+ * Pre-warms lazily when within 1000px of viewport and preloads hovered tabs on demand
+ * so full 1080p HD chapters switch smoothly without slowing initial page load.
  */
 export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -27,23 +30,49 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
   const prefersReduced = usePrefersReducedMotion();
 
   const [activeIdx, setActiveIdx] = useState(0);
+  const [warmedIndices, setWarmedIndices] = useState<number[]>([]);
   const [locked, setLocked] = useState(false);
+  const [nearViewport, setNearViewport] = useState(false);
   const [inViewport, setInViewport] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  // Observe viewport visibility to pause inactive/offscreen video decoders
+  // 1. Pre-warm active stream 1000px before entering viewport
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const preObs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setNearViewport(true);
+          setWarmedIndices((prev) => (prev.includes(0) ? prev : [...prev, 0]));
+          preObs.disconnect();
+        }
+      },
+      { rootMargin: '1000px 0px' }
+    );
+    preObs.observe(el);
+    return () => preObs.disconnect();
+  }, []);
+
+  // 2. Track actual visibility to play/pause decoder cleanly
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => setInViewport(Boolean(entry?.isIntersecting)),
+      ([entry]) => {
+        const visible = Boolean(entry?.isIntersecting);
+        setInViewport(visible);
+        if (visible) {
+          // Once visible, warm remaining chapters sequentially in background
+          setWarmedIndices([0, 1, 2]);
+        }
+      },
       { threshold: 0.15 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  // Play active video only when in viewport and reduced-motion is off
   useEffect(() => {
     videoRefs.current.forEach((v, idx) => {
       if (!v) return;
@@ -55,9 +84,8 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
         v.pause();
       }
     });
-  }, [activeIdx, inViewport, prefersReduced]);
+  }, [activeIdx, inViewport, prefersReduced, warmedIndices]);
 
-  // Clean up synthesized coastal audio on unmount or scroll away
   useEffect(() => {
     if (!soundEnabled || !inViewport) {
       soundRef.current?.stop();
@@ -71,8 +99,13 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
     };
   }, [soundEnabled, inViewport]);
 
+  const warmChapter = (idx: number) => {
+    setWarmedIndices((prev) => (prev.includes(idx) ? prev : [...prev, idx]));
+  };
+
   const handleSelectChapter = (nextIdx: number) => {
     if (nextIdx === activeIdx || locked) return;
+    warmChapter(nextIdx);
     setLocked(true);
     const nextVideo = videoRefs.current[nextIdx];
     if (nextVideo && !prefersReduced) {
@@ -101,7 +134,6 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
       }}
     >
       <div className="container-editorial">
-        {/* Section Header + Chapter Switcher Pills */}
         <div
           style={{
             display: 'flex',
@@ -152,6 +184,8 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                   role="tab"
                   aria-selected={isSelected}
                   type="button"
+                  onMouseEnter={() => warmChapter(idx)}
+                  onFocus={() => warmChapter(idx)}
                   onClick={() => handleSelectChapter(idx)}
                   style={{
                     position: 'relative',
@@ -187,7 +221,7 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
           </div>
         </div>
 
-        {/* Rounded 16:9 / 21:9 Cinema Stage */}
+        {/* Rounded 16:9 Full HD Cinema Stage */}
         <div
           style={{
             position: 'relative',
@@ -200,9 +234,13 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
             boxShadow: '0 28px 70px rgba(0, 0, 0, 0.6)',
           }}
         >
-          {/* Stacked Crossfading Video Planes */}
           {CINEMA_CHAPTERS.map((chapter, idx) => {
             const isActive = idx === activeIdx;
+            const isWarmed = nearViewport && warmedIndices.includes(idx);
+            const resolvedSrc = isWarmed
+              ? selectAdaptiveVideo(chapter.videoSrc, chapter.mobileVideoSrc)
+              : undefined;
+
             return (
               <div
                 key={chapter.id}
@@ -219,12 +257,12 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                   ref={(el) => {
                     videoRefs.current[idx] = el;
                   }}
-                  src={chapter.videoSrc}
+                  src={resolvedSrc}
                   poster={chapter.posterSrc}
                   muted
                   loop
                   playsInline
-                  preload={idx === 0 ? 'auto' : 'metadata'}
+                  preload={isActive && nearViewport ? 'auto' : isWarmed ? 'metadata' : 'none'}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -236,7 +274,6 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
             );
           })}
 
-          {/* Bottom & Top Cinema Scrim */}
           <div
             aria-hidden="true"
             style={{
@@ -249,7 +286,6 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
             }}
           />
 
-          {/* Top Cinema Chrome: Timecode + Soundscape + Fullscreen */}
           <div
             style={{
               position: 'absolute',
@@ -347,7 +383,6 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
             </div>
           </div>
 
-          {/* Bottom Caption & Timecode */}
           <div
             style={{
               position: 'absolute',
@@ -396,13 +431,13 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
               </p>
             </motion.div>
 
-            {/* Chapter Progress Indicators */}
             <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center' }}>
               {CINEMA_CHAPTERS.map((c, idx) => (
                 <button
                   key={c.id}
                   type="button"
                   aria-label={`Jump to ${c.title}`}
+                  onMouseEnter={() => warmChapter(idx)}
                   onClick={() => handleSelectChapter(idx)}
                   style={{
                     width: idx === activeIdx ? '36px' : '12px',

@@ -100,10 +100,9 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
           }}
         />
 
-        {/* Muted H.264 +faststart Twilight Links Cinema Loop */}
+        {/* Muted H.264 +faststart 1080p Full HD (720p Mobile Adaptive) Twilight Links Cinema Loop */}
         <video
           ref={videoRef}
-          src="/videos/hero-links.mp4"
           poster="/images/hero-links.jpg"
           autoPlay={!prefersReduced}
           muted
@@ -120,12 +119,19 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
             objectPosition: 'center 42%',
             display: 'block',
             opacity: videoReady ? 1 : 0,
-            transform: videoReady || prefersReduced ? 'scale(1)' : 'scale(1.06)',
+            transform: videoReady || prefersReduced ? 'scale(1)' : 'scale(1.05)',
             transition: prefersReduced
               ? 'none'
-              : 'opacity 1.8s var(--ease-editorial), transform 1.8s var(--ease-editorial)',
+              : 'opacity 1.5s var(--ease-editorial), transform 1.8s var(--ease-editorial)',
           }}
-        />
+        >
+          <source
+            media="(max-width: 768px)"
+            src="/videos/hero-links-mobile.mp4"
+            type="video/mp4"
+          />
+          <source src="/videos/hero-links.mp4" type="video/mp4" />
+        </video>
 
         {/* Progressive depth-of-field bottom blur + multi-stop obsidian scrim */}
         <div className="hero-progressive-blur" />

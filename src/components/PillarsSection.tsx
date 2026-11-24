@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AnimatePresence,
   motion,
@@ -12,6 +12,7 @@ import {
   useModalLifecycle,
   usePrefersReducedMotion,
 } from './motion/motionHooks';
+import { selectAdaptiveVideo } from '../data/cinemaChapters';
 
 export interface EstatePillar {
   index: string;
@@ -20,6 +21,7 @@ export interface EstatePillar {
   subtitle: string;
   image: string;
   video: string;
+  mobileVideo: string;
   alt: string;
   specs: { label: string; value: string }[];
   dossier: string;
@@ -34,6 +36,7 @@ const PILLARS: EstatePillar[] = [
       '7,420 yards of wind-sculpted coastal fescue, dramatic oceanfront par-3s, and USGA-spec bentgrass greens maintained at 12.5 Stimp.',
     image: '/images/par3-green.jpg',
     video: '/videos/hero-links.mp4',
+    mobileVideo: '/videos/hero-links-mobile.mp4',
     alt: 'Aerial view of Aurelia cliffside par-3 golf green at dawn with ocean mist',
     specs: [
       { label: 'ARCHITECTURAL PAR', value: 'Par 72 · 7,420 Yards' },
@@ -51,6 +54,7 @@ const PILLARS: EstatePillar[] = [
       'Dual-radar launch telemetry, 1,000-fps optical club tracking, and an in-house Tour van for custom forging and shaft Puring.',
     image: '/images/perf-lab.jpg',
     video: '/videos/swing-impact.mp4',
+    mobileVideo: '/videos/swing-impact-mobile.mp4',
     alt: 'Private dark-mode golf performance and biomechanics lab with forged iron',
     specs: [
       { label: 'OPTICAL CAPTURE', value: '1,000 FPS Dual-Radar' },
@@ -68,6 +72,7 @@ const PILLARS: EstatePillar[] = [
       'Fourteen private ocean-view suites, contrast hydrotherapy recovery suites, and a 4,000-bottle sommelier vault overlooking the 18th.',
     image: '/images/clubhouse-dusk.jpg',
     video: '/videos/clubhouse-dusk.mp4',
+    mobileVideo: '/videos/clubhouse-dusk-mobile.mp4',
     alt: 'Modern board-formed concrete and glass golf clubhouse glowing at dusk',
     specs: [
       { label: 'ACCOMMODATION', value: '14 Private Ocean Suites' },
@@ -85,6 +90,7 @@ interface PillarCardProps {
   total: number;
   progress: MotionValue<number>;
   prefersReduced: boolean;
+  sectionNear: boolean;
   onInspect: (pillar: EstatePillar) => void;
 }
 
@@ -94,6 +100,7 @@ function PillarCard({
   total,
   progress,
   prefersReduced,
+  sectionNear,
   onInspect,
 }: PillarCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -106,6 +113,10 @@ function PillarCard({
   const handleEnter = () => {
     setIsHovered(true);
     if (!prefersReduced && videoRef.current) {
+      const targetSrc = selectAdaptiveVideo(pillar.video, pillar.mobileVideo);
+      if (!videoRef.current.getAttribute('src')) {
+        videoRef.current.src = targetSrc;
+      }
       videoRef.current.muted = true;
       videoRef.current.play().catch(() => {});
     }
@@ -115,6 +126,11 @@ function PillarCard({
     setIsHovered(false);
     videoRef.current?.pause();
   };
+
+  const resolvedSrc =
+    sectionNear || isHovered
+      ? selectAdaptiveVideo(pillar.video, pillar.mobileVideo)
+      : undefined;
 
   return (
     <div
@@ -148,7 +164,6 @@ function PillarCard({
             minHeight: 'clamp(420px, 58vh, 560px)',
           }}
         >
-          {/* Left Content Column */}
           <div
             style={{
               padding: 'clamp(1.75rem, 3.5vw, 3.25rem)',
@@ -181,7 +196,7 @@ function PillarCard({
                   }}
                 >
                   <Film size={12} />
-                  {isHovered && !prefersReduced ? 'REEL PLAYING' : 'HOVER PREVIEW'}
+                  {isHovered && !prefersReduced ? '1080P REEL LIVE' : 'HOVER PREVIEW'}
                 </span>
               </div>
 
@@ -269,7 +284,6 @@ function PillarCard({
             </div>
           </div>
 
-          {/* Right Media Column: Photography + Crossfading Live Video Motion on Hover */}
           <div
             style={{
               position: 'relative',
@@ -294,11 +308,11 @@ function PillarCard({
             {!prefersReduced && (
               <video
                 ref={videoRef}
-                src={pillar.video}
+                src={resolvedSrc}
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload={sectionNear ? 'metadata' : 'none'}
                 aria-hidden="true"
                 style={{
                   position: 'absolute',
@@ -323,8 +337,25 @@ export function PillarsSection() {
   const containerRef = useRef<HTMLElement>(null);
   const prefersReduced = usePrefersReducedMotion();
   const [selectedPillar, setSelectedPillar] = useState<EstatePillar | null>(null);
+  const [sectionNear, setSectionNear] = useState(false);
 
   useModalLifecycle(Boolean(selectedPillar), () => setSelectedPillar(null));
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setSectionNear(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '800px 0px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -392,13 +423,13 @@ export function PillarsSection() {
               total={PILLARS.length}
               progress={scrollYProgress}
               prefersReduced={prefersReduced}
+              sectionNear={sectionNear}
               onInspect={setSelectedPillar}
             />
           ))}
         </div>
       </div>
 
-      {/* Interactive Dossier Drawer Modal with Live Motion Header */}
       <AnimatePresence>
         {selectedPillar && (
           <motion.div
@@ -447,7 +478,7 @@ export function PillarsSection() {
                   />
                 ) : (
                   <video
-                    src={selectedPillar.video}
+                    src={selectAdaptiveVideo(selectedPillar.video, selectedPillar.mobileVideo)}
                     poster={selectedPillar.image}
                     autoPlay
                     muted

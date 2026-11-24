@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Compass, Wind } from 'lucide-react';
 import { usePrefersReducedMotion } from './motion/motionHooks';
+import { selectAdaptiveVideo } from '../data/cinemaChapters';
 
 /**
- * Act III — Scroll-Scrubbed Aerial Flyover Stage (MotionSites Technique #7).
- * Scrubs `/videos/aerial-scrub.mp4` via a pre-decoded <canvas> frame cache +
- * short-GOP <video> seek fallback as the user scrolls down a 280vh sticky track,
- * descending through parting coastal sea fog onto the 18th peninsula Par-3 green.
+ * Act III — Scroll-Scrubbed Aerial Flyover Stage (Full 1080p HD GPU ImageBitmap Cache).
+ * Pre-warms lazily when within 1200px of viewport so initial Hero load has zero network contention,
+ * then caches native 1920x1080 (or 1280x720 mobile) GPU ImageBitmaps for razor-sharp Retina scrubbing.
  */
 export function SignatureHoleStage() {
   const trackRef = useRef<HTMLElement>(null);
@@ -15,6 +15,7 @@ export function SignatureHoleStage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const prefersReduced = usePrefersReducedMotion();
 
+  const [shouldLoad, setShouldLoad] = useState(false);
   const [hasVideo, setHasVideo] = useState(false);
   const [hasFrames, setHasFrames] = useState(false);
   const [altitudeFt, setAltitudeFt] = useState(420);
@@ -24,47 +25,64 @@ export function SignatureHoleStage() {
     offset: ['start start', 'end end'],
   });
 
-  // Beat 1: High above the Pacific marine cloud deck (0.00 -> 0.34)
   const beat1Opacity = useTransform(scrollYProgress, [0, 0.08, 0.26, 0.36], [1, 1, 1, 0]);
   const beat1Y = useTransform(scrollYProgress, [0, 0.36], ['0px', '-28px']);
 
-  // Beat 2: Parting clouds & basalt ocean carry telemetry (0.34 -> 0.68)
-  const beat2Opacity = useTransform(scrollYProgress, [0.32, 0.42, 0.60, 0.70], [0, 1, 1, 0]);
-  const beat2Y = useTransform(scrollYProgress, [0.32, 0.45, 0.70], ['28px', '0px', '-24px']);
+  const beat2Opacity = useTransform(scrollYProgress, [0.32, 0.42, 0.6, 0.7], [0, 1, 1, 0]);
+  const beat2Y = useTransform(scrollYProgress, [0.32, 0.45, 0.7], ['28px', '0px', '-24px']);
 
-  // Beat 3: Locked onto the 18th peninsula green (0.68 -> 1.00)
   const beat3Opacity = useTransform(scrollYProgress, [0.66, 0.78, 1], [0, 1, 1]);
-  const beat3Y = useTransform(scrollYProgress, [0.66, 0.80], ['28px', '0px']);
+  const beat3Y = useTransform(scrollYProgress, [0.66, 0.8], ['28px', '0px']);
 
-  // Reticle ring scale on green arrival
   const reticleOpacity = useTransform(scrollYProgress, [0.52, 0.74, 1], [0, 0.9, 0.95]);
   const reticleScale = useTransform(scrollYProgress, [0.52, 0.82], [1.45, 1]);
 
+  // Predictive lazy pre-warm 1200px before entering viewport
   useEffect(() => {
-    if (prefersReduced) return;
+    if (prefersReduced || shouldLoad) return;
+    const track = trackRef.current;
+    if (!track) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setShouldLoad(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '1200px 0px' }
+    );
+    obs.observe(track);
+    return () => obs.disconnect();
+  }, [prefersReduced, shouldLoad]);
+
+  useEffect(() => {
+    if (prefersReduced || !shouldLoad) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const track = trackRef.current;
     if (!video || !canvas || !track) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
     let disposed = false;
     let rafId = 0;
     let smoothProgress = 0;
     let lastFrameIdx = -1;
-    let cachedFrames: HTMLCanvasElement[] = [];
+    let cachedBitmaps: ImageBitmap[] = [];
 
     const resizeCanvas = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.round(window.innerWidth * dpr);
       canvas.height = Math.round(window.innerHeight * dpr);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       lastFrameIdx = -1;
     };
 
-    const drawCover = (source: HTMLCanvasElement) => {
+    const drawCover = (source: ImageBitmap) => {
       const cw = canvas.width;
       const ch = canvas.height;
       const scale = Math.max(cw / source.width, ch / source.height);
@@ -91,7 +109,7 @@ export function SignatureHoleStage() {
         v.currentTime = timeSec;
       });
 
-    const extractFrameCache = async () => {
+    const extractNativeHdBitmaps = async () => {
       const extractor = document.createElement('video');
       extractor.muted = true;
       extractor.playsInline = true;
@@ -107,29 +125,31 @@ export function SignatureHoleStage() {
       if (disposed || !extractor.duration || !extractor.videoWidth) return;
 
       const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      const maxWidth = isMobile ? 640 : 960;
-      const frameCount = isMobile ? 42 : 64;
-      const scale = Math.min(1, maxWidth / extractor.videoWidth);
-      const fw = Math.round(extractor.videoWidth * scale);
-      const fh = Math.round(extractor.videoHeight * scale);
-      const built: HTMLCanvasElement[] = [];
+      const frameCount = isMobile ? 48 : 72;
+      const built: ImageBitmap[] = [];
 
       for (let i = 0; i < frameCount; i++) {
-        if (disposed) return;
-        const targetTime = (i / (frameCount - 1)) * Math.max(0.1, extractor.duration - 0.05);
+        if (disposed) {
+          built.forEach((b) => b.close());
+          return;
+        }
+        const targetTime = (i / (frameCount - 1)) * Math.max(0.08, extractor.duration - 0.04);
         await seekHelper(extractor, targetTime);
-        const off = document.createElement('canvas');
-        off.width = fw;
-        off.height = fh;
-        const offCtx = off.getContext('2d');
-        offCtx?.drawImage(extractor, 0, 0, fw, fh);
-        built.push(off);
+        try {
+          // Native 1920x1080 (desktop) / 1280x720 (mobile) GPU ImageBitmap — zero downscale blur!
+          const bmp = await createImageBitmap(extractor);
+          built.push(bmp);
+        } catch {
+          break;
+        }
       }
 
       if (!disposed && built.length > 0) {
-        cachedFrames = built;
+        cachedBitmaps = built;
         lastFrameIdx = -1;
         setHasFrames(true);
+      } else {
+        built.forEach((b) => b.close());
       }
       extractor.removeAttribute('src');
       extractor.load();
@@ -147,18 +167,18 @@ export function SignatureHoleStage() {
         setAltitudeFt(currentAlt);
       }
 
-      if (cachedFrames.length > 0) {
+      if (cachedBitmaps.length > 0) {
         const idx = Math.min(
-          cachedFrames.length - 1,
-          Math.max(0, Math.round(smoothProgress * (cachedFrames.length - 1)))
+          cachedBitmaps.length - 1,
+          Math.max(0, Math.round(smoothProgress * (cachedBitmaps.length - 1)))
         );
         if (idx !== lastFrameIdx) {
-          drawCover(cachedFrames[idx]);
+          drawCover(cachedBitmaps[idx]);
           lastFrameIdx = idx;
         }
       } else if (video.readyState >= 1 && video.duration) {
-        const targetTime = smoothProgress * Math.max(0.1, video.duration - 0.05);
-        if (!video.seeking && Math.abs(video.currentTime - targetTime) > 0.035) {
+        const targetTime = smoothProgress * Math.max(0.08, video.duration - 0.04);
+        if (!video.seeking && Math.abs(video.currentTime - targetTime) > 0.03) {
           video.currentTime = targetTime;
         }
       }
@@ -169,6 +189,13 @@ export function SignatureHoleStage() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    const chosenSrc = selectAdaptiveVideo(
+      '/videos/aerial-scrub.mp4',
+      '/videos/aerial-scrub-mobile.mp4'
+    );
+    if (video.getAttribute('src') !== chosenSrc) {
+      video.src = chosenSrc;
+    }
     video.muted = true;
     video.playsInline = true;
     video.play().then(() => video.pause()).catch(() => {});
@@ -178,9 +205,9 @@ export function SignatureHoleStage() {
       setHasVideo(true);
       window.setTimeout(() => {
         if (!disposed) {
-          void extractFrameCache();
+          void extractNativeHdBitmaps();
         }
-      }, 320);
+      }, 200);
     };
 
     if (video.readyState >= 2) {
@@ -196,10 +223,10 @@ export function SignatureHoleStage() {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resizeCanvas);
       video.removeEventListener('loadeddata', onLoadedData);
+      cachedBitmaps.forEach((bmp) => bmp.close());
     };
-  }, [prefersReduced]);
+  }, [prefersReduced, shouldLoad]);
 
-  // Reduced-motion fallback: static crisp vista + stacked telemetry cards
   if (prefersReduced) {
     return (
       <section
@@ -234,6 +261,7 @@ export function SignatureHoleStage() {
             <img
               src="/images/aerial-18th.jpg"
               alt="Aerial view of Aurelia 18th peninsula green jutting into Pacific Ocean surf at twilight"
+              loading="lazy"
               style={{ width: '100%', height: 'auto', display: 'block' }}
             />
           </div>
@@ -253,7 +281,6 @@ export function SignatureHoleStage() {
         backgroundColor: 'var(--bg-primary)',
       }}
     >
-      {/* Sticky Full-Viewport Scrubbed Cinema Stage */}
       <div
         style={{
           position: 'sticky',
@@ -264,10 +291,11 @@ export function SignatureHoleStage() {
           backgroundColor: '#070A08',
         }}
       >
-        {/* Layer 1: High-res static aerial poster fallback */}
+        {/* Layer 1: Crisp 1080p Aerial Poster */}
         <img
           src="/images/aerial-18th.jpg"
           alt="Aerial view of Aurelia 18th cliffside peninsula par-3 surrounded by Pacific surf"
+          loading="lazy"
           style={{
             position: 'absolute',
             inset: 0,
@@ -279,13 +307,12 @@ export function SignatureHoleStage() {
           }}
         />
 
-        {/* Layer 2: Short-GOP H.264 Scrubbed Video Fallback */}
+        {/* Layer 2: Native 1080p Short-GOP Scrubbed Video */}
         <video
           ref={videoRef}
-          src="/videos/aerial-scrub.mp4"
           muted
           playsInline
-          preload="auto"
+          preload={shouldLoad ? 'auto' : 'none'}
           aria-hidden="true"
           style={{
             position: 'absolute',
@@ -294,12 +321,12 @@ export function SignatureHoleStage() {
             height: '100%',
             objectFit: 'cover',
             opacity: hasVideo && !hasFrames ? 1 : 0,
-            transition: 'opacity 450ms ease',
+            transition: 'opacity 400ms ease',
             pointerEvents: 'none',
           }}
         />
 
-        {/* Layer 3: Pre-decoded 60fps Canvas Frame Cache */}
+        {/* Layer 3: Native 1920x1080 GPU ImageBitmap High-DPR Canvas */}
         <canvas
           ref={canvasRef}
           aria-hidden="true"
@@ -309,12 +336,11 @@ export function SignatureHoleStage() {
             width: '100%',
             height: '100%',
             opacity: hasFrames ? 1 : 0,
-            transition: 'opacity 450ms ease',
+            transition: 'opacity 400ms ease',
             pointerEvents: 'none',
           }}
         />
 
-        {/* Top & Bottom Obsidian Melts so stage merges invisibly with adjacent sections */}
         <div
           aria-hidden="true"
           style={{
@@ -326,7 +352,7 @@ export function SignatureHoleStage() {
           }}
         />
 
-        {/* Center Architectural Target Reticle (reveals as clouds part over the green) */}
+        {/* Center Architectural Target Reticle */}
         <motion.div
           aria-hidden="true"
           style={{
@@ -379,7 +405,6 @@ export function SignatureHoleStage() {
             paddingBottom: 'clamp(2rem, 4.5vh, 3.25rem)',
           }}
         >
-          {/* Top Telemetry Strip */}
           <div
             style={{
               display: 'flex',
@@ -401,7 +426,7 @@ export function SignatureHoleStage() {
             >
               <Compass size={14} color="#C6A15B" />
               <span className="micro-label" style={{ color: 'var(--fg-primary)', fontSize: '0.62rem' }}>
-                SCROLL-SCRUBBED AERIAL DESCENT · NO. 18 PENINSULA
+                SCROLL-SCRUBBED 1080P DESCENT · NO. 18 PENINSULA
               </span>
             </div>
 
@@ -438,9 +463,7 @@ export function SignatureHoleStage() {
             </div>
           </div>
 
-          {/* Bottom Narrative Beats (Crossfading with Scroll) */}
           <div style={{ position: 'relative', minHeight: '190px', display: 'flex', alignItems: 'flex-end' }}>
-            {/* Beat 1 */}
             <motion.div
               style={{
                 position: 'absolute',
@@ -485,7 +508,6 @@ export function SignatureHoleStage() {
               </p>
             </motion.div>
 
-            {/* Beat 2 */}
             <motion.div
               style={{
                 position: 'absolute',
@@ -527,7 +549,6 @@ export function SignatureHoleStage() {
               </p>
             </motion.div>
 
-            {/* Beat 3 */}
             <motion.div
               style={{
                 position: 'absolute',
