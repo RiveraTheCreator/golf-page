@@ -190,8 +190,8 @@ export function SignatureHoleStage() {
     window.addEventListener('resize', resizeCanvas);
 
     const chosenSrc = selectAdaptiveVideo(
-      '/videos/aerial-scrub.mp4',
-      '/videos/aerial-scrub-mobile.mp4'
+      '/videos/aerial-scrub.mp4?v=1080p',
+      '/videos/aerial-scrub-mobile.mp4?v=1080p'
     );
     if (video.getAttribute('src') !== chosenSrc) {
       video.src = chosenSrc;
@@ -259,7 +259,7 @@ export function SignatureHoleStage() {
             }}
           >
             <img
-              src="/images/aerial-18th.jpg"
+              src="/images/aerial-18th.jpg?v=1080p"
               alt="Aerial view of Aurelia 18th peninsula green jutting into Pacific Ocean surf at twilight"
               loading="lazy"
               style={{ width: '100%', height: 'auto', display: 'block' }}

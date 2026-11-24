@@ -34,9 +34,9 @@ const PILLARS: EstatePillar[] = [
     title: 'Cliffside Championship Routing',
     subtitle:
       '7,420 yards of wind-sculpted coastal fescue, dramatic oceanfront par-3s, and USGA-spec bentgrass greens maintained at 12.5 Stimp.',
-    image: '/images/par3-green.jpg',
-    video: '/videos/hero-links.mp4',
-    mobileVideo: '/videos/hero-links-mobile.mp4',
+    image: '/images/par3-green.jpg?v=1080p',
+    video: '/videos/hero-links.mp4?v=1080p',
+    mobileVideo: '/videos/hero-links-mobile.mp4?v=1080p',
     alt: 'Aerial view of Aurelia cliffside par-3 golf green at dawn with ocean mist',
     specs: [
       { label: 'ARCHITECTURAL PAR', value: 'Par 72 · 7,420 Yards' },
@@ -52,9 +52,9 @@ const PILLARS: EstatePillar[] = [
     title: 'Tour Biomechanics & 3D Force Plates',
     subtitle:
       'Dual-radar launch telemetry, 1,000-fps optical club tracking, and an in-house Tour van for custom forging and shaft Puring.',
-    image: '/images/perf-lab.jpg',
-    video: '/videos/swing-impact.mp4',
-    mobileVideo: '/videos/swing-impact-mobile.mp4',
+    image: '/images/perf-lab.jpg?v=1080p',
+    video: '/videos/swing-impact.mp4?v=1080p',
+    mobileVideo: '/videos/swing-impact-mobile.mp4?v=1080p',
     alt: 'Private dark-mode golf performance and biomechanics lab with forged iron',
     specs: [
       { label: 'OPTICAL CAPTURE', value: '1,000 FPS Dual-Radar' },
@@ -70,9 +70,9 @@ const PILLARS: EstatePillar[] = [
     title: 'Board-Formed Concrete & Cellar',
     subtitle:
       'Fourteen private ocean-view suites, contrast hydrotherapy recovery suites, and a 4,000-bottle sommelier vault overlooking the 18th.',
-    image: '/images/clubhouse-dusk.jpg',
-    video: '/videos/clubhouse-dusk.mp4',
-    mobileVideo: '/videos/clubhouse-dusk-mobile.mp4',
+    image: '/images/clubhouse-dusk.jpg?v=1080p',
+    video: '/videos/clubhouse-dusk.mp4?v=1080p',
+    mobileVideo: '/videos/clubhouse-dusk-mobile.mp4?v=1080p',
     alt: 'Modern board-formed concrete and glass golf clubhouse glowing at dusk',
     specs: [
       { label: 'ACCOMMODATION', value: '14 Private Ocean Suites' },

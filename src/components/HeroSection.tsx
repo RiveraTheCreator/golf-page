@@ -86,7 +86,7 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
       >
         {/* High-res instant poster underneath so zero blank frame ever flashes */}
         <img
-          src="/images/hero-links.jpg"
+          src="/images/hero-links.jpg?v=1080p"
           alt=""
           fetchPriority="high"
           style={{
@@ -103,7 +103,7 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
         {/* Muted H.264 +faststart 1080p Full HD (720p Mobile Adaptive) Twilight Links Cinema Loop */}
         <video
           ref={videoRef}
-          poster="/images/hero-links.jpg"
+          poster="/images/hero-links.jpg?v=1080p"
           autoPlay={!prefersReduced}
           muted
           loop
@@ -127,10 +127,10 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
         >
           <source
             media="(max-width: 768px)"
-            src="/videos/hero-links-mobile.mp4"
+            src="/videos/hero-links-mobile.mp4?v=1080p"
             type="video/mp4"
           />
-          <source src="/videos/hero-links.mp4" type="video/mp4" />
+          <source src="/videos/hero-links.mp4?v=1080p" type="video/mp4" />
         </video>
 
         {/* Progressive depth-of-field bottom blur + multi-stop obsidian scrim */}
