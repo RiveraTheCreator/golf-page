@@ -7,8 +7,7 @@ import {
   useSpring,
   type HTMLMotionProps,
 } from 'framer-motion';
-
-export const EDITORIAL_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+import { EDITORIAL_EASE, usePrefersReducedMotion } from './motionHooks';
 
 export function ScrollProgressLine() {
   const { scrollYProgress } = useScroll();
@@ -64,8 +63,8 @@ export function MaskedLine({ children, delay = 0, className }: MaskedLineProps) 
       style={{
         display: 'block',
         overflow: 'hidden',
-        paddingBottom: '0.06em',
-        marginBottom: '-0.06em',
+        paddingBottom: '0.08em',
+        marginBottom: '-0.08em',
       }}
     >
       <motion.span
@@ -98,6 +97,7 @@ export function MagneticButton({
   ...rest
 }: MagneticButtonProps) {
   const ref = useRef<HTMLButtonElement>(null);
+  const prefersReduced = usePrefersReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -105,7 +105,13 @@ export function MagneticButton({
   const springY = useSpring(y, { stiffness: 260, damping: 20, mass: 0.5 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (window.matchMedia('(hover: none)').matches || !ref.current) return;
+    if (
+      prefersReduced ||
+      window.matchMedia('(hover: none)').matches ||
+      !ref.current
+    ) {
+      return;
+    }
     const rect = ref.current.getBoundingClientRect();
     const offsetX = e.clientX - (rect.left + rect.width / 2);
     const offsetY = e.clientY - (rect.top + rect.height / 2);
@@ -156,16 +162,11 @@ export function AnimatedCounter({
 }: AnimatedCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-40px' });
+  const prefersReduced = usePrefersReducedMotion();
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
-    if (!isInView) return;
-
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      setDisplayValue(target);
-      return;
-    }
+    if (!isInView || prefersReduced) return;
 
     let rafId = 0;
     const start = performance.now();
@@ -173,7 +174,6 @@ export function AnimatedCounter({
     const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // easeOutExpo
       const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
       setDisplayValue(target * eased);
       if (progress < 1) {
@@ -183,12 +183,14 @@ export function AnimatedCounter({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [isInView, target, duration]);
+  }, [isInView, prefersReduced, target, duration]);
+
+  const resolvedValue = prefersReduced && isInView ? target : displayValue;
 
   return (
     <span ref={ref} style={{ fontVariantNumeric: 'tabular-nums' }}>
       {prefix}
-      {displayValue.toFixed(decimals)}
+      {resolvedValue.toFixed(decimals)}
       {suffix}
     </span>
   );

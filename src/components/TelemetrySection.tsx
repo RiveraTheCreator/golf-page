@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { EDITORIAL_EASE } from './motion/MotionPrimitives';
+import { EDITORIAL_EASE } from './motion/motionHooks';
 
 interface ClubProfile {
   id: string;
@@ -160,10 +160,9 @@ export function TelemetrySection() {
             <svg
               viewBox="0 0 600 250"
               width="100%"
-              height="auto"
               role="img"
               aria-label={`Ballistic flight arc for ${activeClub.label}`}
-              style={{ display: 'block', maxHeight: '290px' }}
+              style={{ display: 'block', height: 'auto', maxHeight: '290px' }}
             >
               {/* Baseline Turf Line */}
               <line

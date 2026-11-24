@@ -6,8 +6,12 @@ import {
   useTransform,
   type MotionValue,
 } from 'framer-motion';
-import { ArrowUpRight, X } from 'lucide-react';
-import { EDITORIAL_EASE } from './motion/MotionPrimitives';
+import { ArrowUpRight, Film, X } from 'lucide-react';
+import {
+  EDITORIAL_EASE,
+  useModalLifecycle,
+  usePrefersReducedMotion,
+} from './motion/motionHooks';
 
 export interface EstatePillar {
   index: string;
@@ -15,6 +19,7 @@ export interface EstatePillar {
   title: string;
   subtitle: string;
   image: string;
+  video: string;
   alt: string;
   specs: { label: string; value: string }[];
   dossier: string;
@@ -28,6 +33,7 @@ const PILLARS: EstatePillar[] = [
     subtitle:
       '7,420 yards of wind-sculpted coastal fescue, dramatic oceanfront par-3s, and USGA-spec bentgrass greens maintained at 12.5 Stimp.',
     image: '/images/par3-green.jpg',
+    video: '/videos/hero-links.mp4',
     alt: 'Aerial view of Aurelia cliffside par-3 golf green at dawn with ocean mist',
     specs: [
       { label: 'ARCHITECTURAL PAR', value: 'Par 72 · 7,420 Yards' },
@@ -44,6 +50,7 @@ const PILLARS: EstatePillar[] = [
     subtitle:
       'Dual-radar launch telemetry, 1,000-fps optical club tracking, and an in-house Tour van for custom forging and shaft Puring.',
     image: '/images/perf-lab.jpg',
+    video: '/videos/swing-impact.mp4',
     alt: 'Private dark-mode golf performance and biomechanics lab with forged iron',
     specs: [
       { label: 'OPTICAL CAPTURE', value: '1,000 FPS Dual-Radar' },
@@ -60,6 +67,7 @@ const PILLARS: EstatePillar[] = [
     subtitle:
       'Fourteen private ocean-view suites, contrast hydrotherapy recovery suites, and a 4,000-bottle sommelier vault overlooking the 18th.',
     image: '/images/clubhouse-dusk.jpg',
+    video: '/videos/clubhouse-dusk.mp4',
     alt: 'Modern board-formed concrete and glass golf clubhouse glowing at dusk',
     specs: [
       { label: 'ACCOMMODATION', value: '14 Private Ocean Suites' },
@@ -76,13 +84,37 @@ interface PillarCardProps {
   index: number;
   total: number;
   progress: MotionValue<number>;
+  prefersReduced: boolean;
   onInspect: (pillar: EstatePillar) => void;
 }
 
-function PillarCard({ pillar, index, total, progress, onInspect }: PillarCardProps) {
+function PillarCard({
+  pillar,
+  index,
+  total,
+  progress,
+  prefersReduced,
+  onInspect,
+}: PillarCardProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+
   const targetScale = 1 - (total - 1 - index) * 0.04;
   const rangeStart = index / total;
   const scale = useTransform(progress, [rangeStart, 1], [1, targetScale]);
+
+  const handleEnter = () => {
+    setIsHovered(true);
+    if (!prefersReduced && videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleLeave = () => {
+    setIsHovered(false);
+    videoRef.current?.pause();
+  };
 
   return (
     <div
@@ -93,6 +125,10 @@ function PillarCard({ pillar, index, total, progress, onInspect }: PillarCardPro
       }}
     >
       <motion.article
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        onFocus={handleEnter}
+        onBlur={handleLeave}
         style={{
           scale,
           transformOrigin: 'top center',
@@ -134,7 +170,19 @@ function PillarCard({ pillar, index, total, progress, onInspect }: PillarCardPro
                 <span className="micro-label" style={{ color: 'var(--accent-gold)' }}>
                   {pillar.index} / {pillar.tag}
                 </span>
-                <span className="micro-label">AURELIA ESTATE</span>
+                <span
+                  className="micro-label"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    color: isHovered && !prefersReduced ? 'var(--accent-gold)' : 'var(--fg-muted)',
+                    transition: 'color 220ms var(--ease-ui)',
+                  }}
+                >
+                  <Film size={12} />
+                  {isHovered && !prefersReduced ? 'REEL PLAYING' : 'HOVER PREVIEW'}
+                </span>
               </div>
 
               <h3
@@ -199,9 +247,10 @@ function PillarCard({ pillar, index, total, progress, onInspect }: PillarCardPro
               </div>
 
               <button
+                id={`pillar-dossier-btn-${pillar.index}`}
                 type="button"
                 onClick={() => onInspect(pillar)}
-                className="glass-surface"
+                className="glass-surface-interactive"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -212,28 +261,28 @@ function PillarCard({ pillar, index, total, progress, onInspect }: PillarCardPro
                   color: 'var(--fg-primary)',
                   fontSize: '0.85rem',
                   fontWeight: 500,
-                  transition: 'border-color 200ms var(--ease-ui), transform 200ms var(--ease-ui)',
                 }}
               >
                 <span>Inspect Dossier</span>
-                <ArrowUpRight size={15} color="#C6A15B" />
+                <ArrowUpRight size={15} color="#C6A15B" className="cta-arrow-disc" />
               </button>
             </div>
           </div>
 
-          {/* Right Media Column */}
+          {/* Right Media Column: Photography + Crossfading Live Video Motion on Hover */}
           <div
             style={{
               position: 'relative',
               overflow: 'hidden',
               minHeight: '280px',
+              backgroundColor: '#070A08',
             }}
           >
             <motion.img
               src={pillar.image}
               alt={pillar.alt}
               loading="lazy"
-              whileHover={{ scale: 1.04 }}
+              animate={{ scale: isHovered ? 1.04 : 1 }}
               transition={{ duration: 0.7, ease: EDITORIAL_EASE }}
               style={{
                 width: '100%',
@@ -242,6 +291,27 @@ function PillarCard({ pillar, index, total, progress, onInspect }: PillarCardPro
                 display: 'block',
               }}
             />
+            {!prefersReduced && (
+              <video
+                ref={videoRef}
+                src={pillar.video}
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: isHovered ? 1 : 0,
+                  transition: 'opacity 600ms var(--ease-editorial)',
+                  pointerEvents: 'none',
+                }}
+              />
+            )}
           </div>
         </div>
       </motion.article>
@@ -251,7 +321,10 @@ function PillarCard({ pillar, index, total, progress, onInspect }: PillarCardPro
 
 export function PillarsSection() {
   const containerRef = useRef<HTMLElement>(null);
+  const prefersReduced = usePrefersReducedMotion();
   const [selectedPillar, setSelectedPillar] = useState<EstatePillar | null>(null);
+
+  useModalLifecycle(Boolean(selectedPillar), () => setSelectedPillar(null));
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -265,6 +338,7 @@ export function PillarsSection() {
       style={{
         paddingBlock: 'clamp(4rem, 8vw, 7rem)',
         backgroundColor: 'var(--bg-primary)',
+        borderTop: '1px solid var(--border-subtle)',
       }}
     >
       <div className="container-editorial">
@@ -280,7 +354,7 @@ export function PillarsSection() {
         >
           <div>
             <span className="micro-label" style={{ color: 'var(--accent-gold)' }}>
-              01 — 03 / THE ESTATE
+              03 / THE ESTATE PILLARS
             </span>
             <h2
               style={{
@@ -317,13 +391,14 @@ export function PillarsSection() {
               index={idx}
               total={PILLARS.length}
               progress={scrollYProgress}
+              prefersReduced={prefersReduced}
               onInspect={setSelectedPillar}
             />
           ))}
         </div>
       </div>
 
-      {/* Interactive Dossier Drawer Modal */}
+      {/* Interactive Dossier Drawer Modal with Live Motion Header */}
       <AnimatePresence>
         {selectedPillar && (
           <motion.div
@@ -336,8 +411,9 @@ export function PillarsSection() {
               position: 'fixed',
               inset: 0,
               zIndex: 110,
-              backgroundColor: 'rgba(7, 10, 8, 0.8)',
-              backdropFilter: 'blur(10px)',
+              backgroundColor: 'rgba(7, 10, 8, 0.82)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -362,17 +438,29 @@ export function PillarsSection() {
                 overflow: 'hidden',
               }}
             >
-              <div style={{ position: 'relative', height: '240px' }}>
-                <img
-                  src={selectedPillar.image}
-                  alt={selectedPillar.alt}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
+              <div style={{ position: 'relative', height: '250px', backgroundColor: '#070A08' }}>
+                {prefersReduced ? (
+                  <img
+                    src={selectedPillar.image}
+                    alt={selectedPillar.alt}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                ) : (
+                  <video
+                    src={selectedPillar.video}
+                    poster={selectedPillar.image}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                )}
                 <button
                   type="button"
                   aria-label="Close dossier"
                   onClick={() => setSelectedPillar(null)}
-                  className="glass-surface"
+                  className="glass-surface-interactive"
                   style={{
                     position: 'absolute',
                     top: '1rem',
@@ -389,7 +477,7 @@ export function PillarsSection() {
                   <X size={18} />
                 </button>
               </div>
-              <div style={{ padding: '2rem' }}>
+              <div style={{ padding: 'clamp(1.5rem, 3.5vw, 2.25rem)' }}>
                 <span className="micro-label" style={{ color: 'var(--accent-gold)' }}>
                   {selectedPillar.index} / {selectedPillar.tag} DOSSIER
                 </span>
