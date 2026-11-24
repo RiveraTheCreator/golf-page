@@ -58,7 +58,7 @@ export function TelemetrySection() {
     <section
       id="telemetry"
       style={{
-        paddingBlock: 'clamp(5rem, 10vw, 8.5rem)',
+        paddingBlock: 'clamp(4.25rem, 10vw, 8.5rem)',
         backgroundColor: 'var(--bg-primary)',
         borderTop: '1px solid var(--border-subtle)',
       }}
@@ -70,8 +70,8 @@ export function TelemetrySection() {
             flexWrap: 'wrap',
             alignItems: 'flex-end',
             justifyContent: 'space-between',
-            gap: '2rem',
-            marginBottom: '3rem',
+            gap: '1.5rem',
+            marginBottom: 'clamp(1.75rem, 4vw, 3rem)',
           }}
         >
           <div>
@@ -81,27 +81,26 @@ export function TelemetrySection() {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(2.3rem, 4.6vw, 4rem)',
+                fontSize: 'clamp(2.15rem, 4.6vw, 4rem)',
                 fontWeight: 400,
                 lineHeight: 1.02,
                 letterSpacing: '-0.025em',
-                margin: '0.75rem 0 0 0',
+                margin: '0.65rem 0 0 0',
               }}
             >
               Tour-Grade Telemetry, Real-Time
             </h2>
           </div>
 
-          {/* Club Selector Pills */}
+          {/* Swipeable single-row Club Selector Pills */}
           <div
             role="tablist"
             aria-label="Select golf club telemetry"
-            className="glass-surface"
+            className="glass-surface pill-scroll-rail"
             style={{
-              display: 'inline-flex',
-              padding: '0.3rem',
+              padding: '0.28rem',
               borderRadius: 'var(--radius-pill)',
-              gap: '0.25rem',
+              gap: '0.2rem',
             }}
           >
             {CLUB_PROFILES.map((club) => {
@@ -115,14 +114,16 @@ export function TelemetrySection() {
                   onClick={() => setSelectedId(club.id)}
                   style={{
                     position: 'relative',
-                    padding: '0.6rem 1.15rem',
-                    minHeight: '44px',
+                    padding: '0.55rem 1.05rem',
+                    minHeight: '42px',
                     border: 'none',
                     borderRadius: 'var(--radius-pill)',
                     background: 'transparent',
                     color: isSelected ? '#070A08' : 'var(--fg-secondary)',
-                    fontSize: '0.82rem',
+                    fontSize: '0.78rem',
                     fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                     zIndex: 1,
                     transition: 'color 200ms var(--ease-ui)',
                   }}
@@ -153,7 +154,7 @@ export function TelemetrySection() {
             backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border-strong)',
             borderRadius: 'var(--radius-card)',
-            padding: 'clamp(1.5rem, 3.5vw, 3rem)',
+            padding: 'clamp(1.35rem, 3.5vw, 3rem)',
           }}
         >
           <div style={{ width: '100%', overflow: 'hidden' }}>
@@ -162,9 +163,8 @@ export function TelemetrySection() {
               width="100%"
               role="img"
               aria-label={`Ballistic flight arc for ${activeClub.label}`}
-              style={{ display: 'block', height: 'auto', maxHeight: '290px' }}
+              style={{ display: 'block', height: 'auto', minHeight: '150px', maxHeight: '290px' }}
             >
-              {/* Baseline Turf Line */}
               <line
                 x1="20"
                 y1="226"
@@ -173,7 +173,6 @@ export function TelemetrySection() {
                 stroke="rgba(243,239,230,0.16)"
                 strokeWidth="1"
               />
-              {/* Yardage Reference Ticks */}
               {[140, 260, 380, 500].map((x) => (
                 <line
                   key={x}
@@ -186,7 +185,6 @@ export function TelemetrySection() {
                 />
               ))}
 
-              {/* Animated Ballistic Arc */}
               <motion.path
                 key={activeClub.id}
                 d={activeClub.pathD}
@@ -199,7 +197,6 @@ export function TelemetrySection() {
                 transition={{ duration: 1.05, ease: EDITORIAL_EASE }}
               />
 
-              {/* Apex Marker */}
               <motion.g
                 key={`${activeClub.id}-apex`}
                 initial={{ opacity: 0, scale: 0.6 }}
@@ -219,7 +216,7 @@ export function TelemetrySection() {
                   y={activeClub.apexPoint.y - 14}
                   textAnchor="middle"
                   fill="#8F9891"
-                  fontSize="10"
+                  fontSize="11"
                   fontFamily="JetBrains Mono, monospace"
                 >
                   APEX {activeClub.apex}
@@ -229,13 +226,11 @@ export function TelemetrySection() {
           </div>
 
           <div
+            className="metrics-grid-responsive"
             style={{
-              marginTop: '2rem',
-              paddingTop: '1.75rem',
+              marginTop: '1.5rem',
+              paddingTop: '1.5rem',
               borderTop: '1px solid var(--border-subtle)',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-              gap: '1.5rem',
             }}
           >
             {[
@@ -245,7 +240,10 @@ export function TelemetrySection() {
               { label: 'CARRY DISTANCE', value: activeClub.carry, highlight: true },
             ].map((metric) => (
               <div key={metric.label}>
-                <span className="micro-label" style={{ display: 'block', marginBottom: '0.4rem' }}>
+                <span
+                  className="micro-label"
+                  style={{ display: 'block', fontSize: '0.6rem', marginBottom: '0.35rem' }}
+                >
                   {metric.label}
                 </span>
                 <motion.span
@@ -256,7 +254,7 @@ export function TelemetrySection() {
                   style={{
                     display: 'block',
                     fontFamily: 'var(--font-display)',
-                    fontSize: 'clamp(1.75rem, 2.8vw, 2.4rem)',
+                    fontSize: 'clamp(1.55rem, 2.8vw, 2.4rem)',
                     fontWeight: 500,
                     color: metric.highlight ? 'var(--accent-gold)' : 'var(--fg-primary)',
                     fontVariantNumeric: 'tabular-nums',

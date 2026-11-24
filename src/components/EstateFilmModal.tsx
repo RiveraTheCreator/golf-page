@@ -81,13 +81,15 @@ function EstateFilmTheatre({
         position: 'fixed',
         inset: 0,
         zIndex: 130,
-        backgroundColor: 'rgba(4, 6, 5, 0.95)',
+        backgroundColor: 'rgba(4, 6, 5, 0.96)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         padding: 'clamp(1rem, 3vw, 2.5rem)',
+        paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))',
+        overflowY: 'auto',
       }}
     >
       <motion.div
@@ -102,36 +104,37 @@ function EstateFilmTheatre({
           marginInline: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.25rem',
+          gap: '1.1rem',
         }}
       >
-        {/* Theatre Top Bar */}
         <div
           style={{
             display: 'flex',
-            flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1rem',
+            gap: '0.75rem',
           }}
         >
-          <div>
-            <span className="micro-label" style={{ color: 'var(--accent-gold)' }}>
-              AURELIA® CINEMA · 2.39:1 ANAMORPHIC REEL
+          <div style={{ minWidth: 0 }}>
+            <span className="micro-label" style={{ color: 'var(--accent-gold)', fontSize: '0.6rem' }}>
+              AURELIA® CINEMA · 1080P REEL
             </span>
             <h3
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(1.5rem, 2.6vw, 2.1rem)',
+                fontSize: 'clamp(1.35rem, 2.6vw, 2.1rem)',
                 fontWeight: 400,
                 margin: '0.2rem 0 0 0',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               {activeChapter.title}
             </h3>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
             <button
               type="button"
               aria-label={isPlaying ? 'Pause showreel' : 'Play showreel'}
@@ -155,16 +158,18 @@ function EstateFilmTheatre({
               aria-label={soundOn ? 'Mute ambient audio' : 'Enable ambient audio'}
               aria-pressed={soundOn}
               onClick={() => setSoundOn((s) => !s)}
-              className="glass-surface-interactive"
+              className="glass-surface-interactive theatre-sound-btn"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '0.45rem',
-                padding: '0 1rem',
+                padding: '0 0.95rem',
                 height: '44px',
+                minWidth: '44px',
                 borderRadius: 'var(--radius-pill)',
                 color: 'var(--fg-primary)',
-                fontSize: '0.74rem',
+                fontSize: '0.72rem',
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
@@ -175,7 +180,9 @@ function EstateFilmTheatre({
               ) : (
                 <VolumeX size={15} color="#8F9891" />
               )}
-              <span>{soundOn ? 'Soundscape On' : 'Soundscape Off'}</span>
+              <span className="theatre-sound-label">
+                {soundOn ? 'Soundscape On' : 'Soundscape Off'}
+              </span>
             </button>
 
             <button
@@ -198,19 +205,8 @@ function EstateFilmTheatre({
           </div>
         </div>
 
-        {/* Letterboxed 2.39:1 Viewport */}
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            aspectRatio: '2.35 / 1',
-            minHeight: '260px',
-            borderRadius: '22px',
-            overflow: 'hidden',
-            border: '1px solid var(--border-strong)',
-            backgroundColor: '#000',
-          }}
-        >
+        {/* Responsive Cinema Viewport (2.35:1 Desktop, 16:10 Mobile) */}
+        <div className="theatre-video-frame">
           <video
             key={activeChapter.videoSrc}
             ref={videoRef}
@@ -234,41 +230,53 @@ function EstateFilmTheatre({
               inset: 0,
               pointerEvents: 'none',
               background:
-                'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, transparent 25%, transparent 72%, rgba(0,0,0,0.68) 100%)',
+                'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, transparent 25%, transparent 70%, rgba(0,0,0,0.72) 100%)',
             }}
           />
           <div
             style={{
               position: 'absolute',
-              bottom: '1rem',
-              left: '1.35rem',
-              right: '1.35rem',
+              bottom: '0.85rem',
+              left: '1rem',
+              right: '1rem',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              gap: '1rem',
+              gap: '0.75rem',
             }}
           >
-            <span className="micro-label" style={{ fontSize: '0.62rem', color: 'var(--fg-primary)' }}>
+            <span
+              className="micro-label"
+              style={{
+                fontSize: '0.58rem',
+                color: 'var(--fg-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {activeChapter.specs}
             </span>
-            <span className="micro-label" style={{ fontSize: '0.62rem', color: 'var(--accent-gold)' }}>
+            <span
+              className="micro-label"
+              style={{ fontSize: '0.58rem', color: 'var(--accent-gold)', flexShrink: 0 }}
+            >
               {activeChapter.timecode}
             </span>
           </div>
         </div>
 
-        {/* Chapter Switcher + Direct Inquiry Footer */}
+        {/* Swipeable Chapter Rail + Direct Inquiry CTA */}
         <div
           style={{
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1rem',
+            gap: '0.85rem',
           }}
         >
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div className="pill-scroll-rail" style={{ gap: '0.45rem' }}>
             {CINEMA_CHAPTERS.map((chap, idx) => {
               const active = idx === chapterIdx;
               return (
@@ -278,13 +286,15 @@ function EstateFilmTheatre({
                   onClick={() => setChapterIdx(idx)}
                   className="glass-surface-interactive"
                   style={{
-                    padding: '0.55rem 1rem',
-                    minHeight: '44px',
+                    padding: '0.5rem 0.95rem',
+                    minHeight: '42px',
                     borderRadius: 'var(--radius-pill)',
                     borderColor: active ? 'var(--accent-gold)' : undefined,
                     color: active ? 'var(--fg-primary)' : 'var(--fg-muted)',
-                    fontSize: '0.8rem',
+                    fontSize: '0.78rem',
                     fontWeight: active ? 600 : 400,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                   }}
                 >
                   {chap.tabLabel}
@@ -299,14 +309,15 @@ function EstateFilmTheatre({
               onClose();
               onApplyClick();
             }}
+            className="theatre-inquire-btn"
             style={{
-              padding: '0.7rem 1.4rem',
-              minHeight: '44px',
+              padding: '0.75rem 1.4rem',
+              minHeight: '46px',
               borderRadius: 'var(--radius-pill)',
               backgroundColor: 'var(--accent-gold)',
               color: '#070A08',
               border: 'none',
-              fontSize: '0.84rem',
+              fontSize: '0.86rem',
               fontWeight: 600,
             }}
           >
@@ -314,6 +325,36 @@ function EstateFilmTheatre({
           </button>
         </div>
       </motion.div>
+
+      <style>{`
+        .theatre-video-frame {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 2.35 / 1;
+          min-height: 260px;
+          border-radius: 22px;
+          overflow: hidden;
+          border: 1px solid var(--border-strong);
+          background-color: #000;
+        }
+        @media (max-width: 640px) {
+          .theatre-video-frame {
+            aspect-ratio: 16 / 10;
+            min-height: 230px;
+            border-radius: 18px;
+          }
+          .theatre-sound-btn {
+            padding: 0 !important;
+            width: 44px;
+          }
+          .theatre-sound-label {
+            display: none;
+          }
+          .theatre-inquire-btn {
+            width: 100%;
+          }
+        }
+      `}</style>
     </motion.div>
   );
 }

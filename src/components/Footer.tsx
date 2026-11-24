@@ -10,8 +10,8 @@ export function Footer() {
       style={{
         backgroundColor: 'var(--bg-primary)',
         borderTop: '1px solid var(--border-subtle)',
-        paddingTop: '4rem',
-        paddingBottom: '2.5rem',
+        paddingTop: 'clamp(3rem, 6vw, 4rem)',
+        paddingBottom: 'max(2.5rem, env(safe-area-inset-bottom))',
       }}
     >
       <div className="container-editorial">

@@ -55,7 +55,7 @@ export function Navbar({ onApplyClick, onWatchFilmClick }: NavbarProps) {
         transition={{ duration: 0.85, delay: 0.05, ease: EDITORIAL_EASE }}
         style={{
           position: 'fixed',
-          top: 'clamp(0.85rem, 2vw, 1.4rem)',
+          top: 'max(0.85rem, env(safe-area-inset-top))',
           left: 0,
           right: 0,
           zIndex: 80,

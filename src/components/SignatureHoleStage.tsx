@@ -5,9 +5,10 @@ import { usePrefersReducedMotion } from './motion/motionHooks';
 import { selectAdaptiveVideo } from '../data/cinemaChapters';
 
 /**
- * Act III — Scroll-Scrubbed Aerial Flyover Stage (Full 1080p HD GPU ImageBitmap Cache).
- * Pre-warms lazily when within 1200px of viewport so initial Hero load has zero network contention,
- * then caches native 1920x1080 (or 1280x720 mobile) GPU ImageBitmaps for razor-sharp Retina scrubbing.
+ * Act III — Scroll-Scrubbed Aerial Flyover Stage (1080p Desktop / Memory-Safe Retina Mobile).
+ * - Desktop: 72 native 1920x1080 GPU ImageBitmaps
+ * - Mobile: 36 crisp 960x540 GPU ImageBitmaps (~55 MB VRAM budget so iOS Safari never reloads tab),
+ *   100svh sticky frame, compact single-row top telemetry, and elevated reticle so Beat 3 never overlaps.
  */
 export function SignatureHoleStage() {
   const trackRef = useRef<HTMLElement>(null);
@@ -26,18 +27,17 @@ export function SignatureHoleStage() {
   });
 
   const beat1Opacity = useTransform(scrollYProgress, [0, 0.08, 0.26, 0.36], [1, 1, 1, 0]);
-  const beat1Y = useTransform(scrollYProgress, [0, 0.36], ['0px', '-28px']);
+  const beat1Y = useTransform(scrollYProgress, [0, 0.36], ['0px', '-24px']);
 
   const beat2Opacity = useTransform(scrollYProgress, [0.32, 0.42, 0.6, 0.7], [0, 1, 1, 0]);
-  const beat2Y = useTransform(scrollYProgress, [0.32, 0.45, 0.7], ['28px', '0px', '-24px']);
+  const beat2Y = useTransform(scrollYProgress, [0.32, 0.45, 0.7], ['24px', '0px', '-20px']);
 
   const beat3Opacity = useTransform(scrollYProgress, [0.66, 0.78, 1], [0, 1, 1]);
-  const beat3Y = useTransform(scrollYProgress, [0.66, 0.8], ['28px', '0px']);
+  const beat3Y = useTransform(scrollYProgress, [0.66, 0.8], ['24px', '0px']);
 
   const reticleOpacity = useTransform(scrollYProgress, [0.52, 0.74, 1], [0, 0.9, 0.95]);
-  const reticleScale = useTransform(scrollYProgress, [0.52, 0.82], [1.45, 1]);
+  const reticleScale = useTransform(scrollYProgress, [0.52, 0.82], [1.4, 1]);
 
-  // Predictive lazy pre-warm 1200px before entering viewport
   useEffect(() => {
     if (prefersReduced || shouldLoad) return;
     const track = trackRef.current;
@@ -74,7 +74,8 @@ export function SignatureHoleStage() {
     let cachedBitmaps: ImageBitmap[] = [];
 
     const resizeCanvas = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.75 : 2);
       canvas.width = Math.round(window.innerWidth * dpr);
       canvas.height = Math.round(window.innerHeight * dpr);
       ctx.imageSmoothingEnabled = true;
@@ -125,7 +126,7 @@ export function SignatureHoleStage() {
       if (disposed || !extractor.duration || !extractor.videoWidth) return;
 
       const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      const frameCount = isMobile ? 48 : 72;
+      const frameCount = isMobile ? 36 : 72;
       const built: ImageBitmap[] = [];
 
       for (let i = 0; i < frameCount; i++) {
@@ -136,8 +137,13 @@ export function SignatureHoleStage() {
         const targetTime = (i / (frameCount - 1)) * Math.max(0.08, extractor.duration - 0.04);
         await seekHelper(extractor, targetTime);
         try {
-          // Native 1920x1080 (desktop) / 1280x720 (mobile) GPU ImageBitmap — zero downscale blur!
-          const bmp = await createImageBitmap(extractor);
+          const bmp = isMobile
+            ? await createImageBitmap(extractor, {
+                resizeWidth: 960,
+                resizeHeight: 540,
+                resizeQuality: 'high',
+              })
+            : await createImageBitmap(extractor);
           built.push(bmp);
         } catch {
           break;
@@ -275,25 +281,24 @@ export function SignatureHoleStage() {
       id="bluff-stage"
       ref={trackRef}
       aria-label="Signature 18th Cliffside Peninsula Aerial Flyover"
+      className="bluff-track-section"
       style={{
         position: 'relative',
-        height: '285vh',
         backgroundColor: 'var(--bg-primary)',
       }}
     >
       <div
+        className="bluff-sticky-viewport"
         style={{
           position: 'sticky',
           top: 0,
-          height: '100dvh',
           width: '100%',
           overflow: 'hidden',
           backgroundColor: '#070A08',
         }}
       >
-        {/* Layer 1: Crisp 1080p Aerial Poster */}
         <img
-          src="/images/aerial-18th.jpg"
+          src="/images/aerial-18th.jpg?v=1080p"
           alt="Aerial view of Aurelia 18th cliffside peninsula par-3 surrounded by Pacific surf"
           loading="lazy"
           style={{
@@ -307,7 +312,6 @@ export function SignatureHoleStage() {
           }}
         />
 
-        {/* Layer 2: Native 1080p Short-GOP Scrubbed Video */}
         <video
           ref={videoRef}
           muted
@@ -326,7 +330,6 @@ export function SignatureHoleStage() {
           }}
         />
 
-        {/* Layer 3: Native 1920x1080 GPU ImageBitmap High-DPR Canvas */}
         <canvas
           ref={canvasRef}
           aria-hidden="true"
@@ -348,17 +351,17 @@ export function SignatureHoleStage() {
             inset: 0,
             pointerEvents: 'none',
             background:
-              'linear-gradient(180deg, #070A08 0%, rgba(7,10,8,0.28) 16%, rgba(7,10,8,0.12) 52%, rgba(7,10,8,0.62) 84%, #070A08 100%)',
+              'linear-gradient(180deg, #070A08 0%, rgba(7,10,8,0.32) 16%, rgba(7,10,8,0.14) 48%, rgba(7,10,8,0.78) 82%, #070A08 100%)',
           }}
         />
 
         {/* Center Architectural Target Reticle */}
         <motion.div
           aria-hidden="true"
+          className="bluff-reticle-wrap"
           style={{
             position: 'absolute',
             left: '50%',
-            top: '51%',
             x: '-50%',
             y: '-50%',
             opacity: reticleOpacity,
@@ -367,7 +370,13 @@ export function SignatureHoleStage() {
             zIndex: 4,
           }}
         >
-          <svg width="168" height="168" viewBox="0 0 168 168" fill="none">
+          <svg
+            className="bluff-reticle-svg"
+            width="168"
+            height="168"
+            viewBox="0 0 168 168"
+            fill="none"
+          >
             <circle
               cx="84"
               cy="84"
@@ -401,17 +410,17 @@ export function SignatureHoleStage() {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            paddingTop: 'clamp(5.5rem, 9vh, 7rem)',
-            paddingBottom: 'clamp(2rem, 4.5vh, 3.25rem)',
+            paddingTop: 'clamp(4.85rem, 9vh, 7rem)',
+            paddingBottom: 'clamp(1.5rem, 4vh, 3.25rem)',
           }}
         >
+          {/* Top Telemetry Strip */}
           <div
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '1rem',
+              gap: '0.5rem',
             }}
           >
             <div
@@ -419,14 +428,23 @@ export function SignatureHoleStage() {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.65rem',
-                padding: '0.5rem 1rem',
+                gap: '0.5rem',
+                padding: '0.45rem 0.85rem',
                 borderRadius: 'var(--radius-pill)',
               }}
             >
-              <Compass size={14} color="#C6A15B" />
-              <span className="micro-label" style={{ color: 'var(--fg-primary)', fontSize: '0.62rem' }}>
+              <Compass size={13} color="#C6A15B" />
+              <span
+                className="micro-label bluff-badge-desktop"
+                style={{ color: 'var(--fg-primary)', fontSize: '0.6rem' }}
+              >
                 SCROLL-SCRUBBED 1080P DESCENT · NO. 18 PENINSULA
+              </span>
+              <span
+                className="micro-label bluff-badge-mobile"
+                style={{ color: 'var(--fg-primary)', fontSize: '0.58rem' }}
+              >
+                NO. 18 PENINSULA
               </span>
             </div>
 
@@ -435,39 +453,42 @@ export function SignatureHoleStage() {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '1.1rem',
-                padding: '0.5rem 1rem',
+                gap: '0.65rem',
+                padding: '0.45rem 0.85rem',
                 borderRadius: 'var(--radius-pill)',
               }}
             >
-              <span className="micro-label" style={{ fontSize: '0.62rem', color: 'var(--accent-gold)' }}>
+              <span className="micro-label" style={{ fontSize: '0.58rem', color: 'var(--accent-gold)' }}>
                 ALT {altitudeFt} FT
               </span>
               <span
                 aria-hidden="true"
-                style={{ width: '1px', height: '12px', backgroundColor: 'var(--border-strong)' }}
+                className="bluff-wind-sep"
+                style={{ width: '1px', height: '11px', backgroundColor: 'var(--border-strong)' }}
               />
               <span
-                className="micro-label"
+                className="micro-label bluff-wind-label"
                 style={{
-                  fontSize: '0.62rem',
+                  fontSize: '0.58rem',
                   color: 'var(--fg-primary)',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
+                  gap: '0.3rem',
                 }}
               >
-                <Wind size={12} color="#C6A15B" />
-                11 KT WNW
+                <Wind size={11} color="#C6A15B" />
+                11 KT
               </span>
             </div>
           </div>
 
-          <div style={{ position: 'relative', minHeight: '190px', display: 'flex', alignItems: 'flex-end' }}>
+          {/* Bottom Narrative Beats */}
+          <div style={{ position: 'relative', minHeight: '220px', display: 'flex', alignItems: 'flex-end' }}>
             <motion.div
               style={{
                 position: 'absolute',
                 left: 0,
+                right: 0,
                 bottom: 0,
                 maxWidth: '38rem',
                 opacity: beat1Opacity,
@@ -481,11 +502,11 @@ export function SignatureHoleStage() {
               <h2
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: 'clamp(2.35rem, 5vw, 4.4rem)',
+                  fontSize: 'clamp(2.05rem, 5vw, 4.4rem)',
                   fontWeight: 400,
-                  lineHeight: 0.96,
+                  lineHeight: 0.98,
                   letterSpacing: '-0.025em',
-                  margin: '0.65rem 0 0.85rem 0',
+                  margin: '0.55rem 0 0.7rem 0',
                   textShadow: '0 12px 32px rgba(0, 0, 0, 0.65)',
                 }}
               >
@@ -498,7 +519,7 @@ export function SignatureHoleStage() {
                 style={{
                   margin: 0,
                   color: 'var(--fg-secondary)',
-                  fontSize: '1rem',
+                  fontSize: 'clamp(0.9rem, 1.2vw, 1rem)',
                   maxWidth: '32rem',
                   textShadow: '0 2px 16px rgba(0, 0, 0, 0.65)',
                 }}
@@ -512,6 +533,7 @@ export function SignatureHoleStage() {
               style={{
                 position: 'absolute',
                 left: 0,
+                right: 0,
                 bottom: 0,
                 maxWidth: '40rem',
                 opacity: beat2Opacity,
@@ -525,11 +547,11 @@ export function SignatureHoleStage() {
               <h3
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: 'clamp(2.2rem, 4.6vw, 4rem)',
+                  fontSize: 'clamp(1.95rem, 4.6vw, 4rem)',
                   fontWeight: 400,
-                  lineHeight: 0.98,
+                  lineHeight: 1,
                   letterSpacing: '-0.025em',
-                  margin: '0.65rem 0 0.85rem 0',
+                  margin: '0.55rem 0 0.7rem 0',
                   textShadow: '0 12px 32px rgba(0, 0, 0, 0.65)',
                 }}
               >
@@ -539,7 +561,7 @@ export function SignatureHoleStage() {
                 style={{
                   margin: 0,
                   color: 'var(--fg-secondary)',
-                  fontSize: '1rem',
+                  fontSize: 'clamp(0.9rem, 1.2vw, 1rem)',
                   maxWidth: '34rem',
                   textShadow: '0 2px 16px rgba(0, 0, 0, 0.65)',
                 }}
@@ -559,7 +581,7 @@ export function SignatureHoleStage() {
                 flexWrap: 'wrap',
                 alignItems: 'flex-end',
                 justifyContent: 'space-between',
-                gap: '1.5rem',
+                gap: '1rem',
                 opacity: beat3Opacity,
                 y: beat3Y,
                 pointerEvents: 'none',
@@ -572,21 +594,22 @@ export function SignatureHoleStage() {
                 <h3
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontSize: 'clamp(2.2rem, 4.6vw, 4rem)',
+                    fontSize: 'clamp(1.95rem, 4.6vw, 4rem)',
                     fontWeight: 400,
-                    lineHeight: 0.98,
+                    lineHeight: 1,
                     letterSpacing: '-0.025em',
-                    margin: '0.65rem 0 0.75rem 0',
+                    margin: '0.55rem 0 0.6rem 0',
                     textShadow: '0 12px 32px rgba(0, 0, 0, 0.65)',
                   }}
                 >
                   Zero Homes. Zero Crowds. Only the Pacific.
                 </h3>
                 <p
+                  className="bluff-beat3-sub"
                   style={{
                     margin: 0,
                     color: 'var(--fg-secondary)',
-                    fontSize: '0.98rem',
+                    fontSize: '0.94rem',
                     textShadow: '0 2px 16px rgba(0, 0, 0, 0.65)',
                   }}
                 >
@@ -596,25 +619,25 @@ export function SignatureHoleStage() {
               </div>
 
               <div
-                className="glass-surface"
+                className="glass-surface bluff-specs-card"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(3, auto)',
-                  gap: '1.35rem',
-                  padding: '0.95rem 1.35rem',
-                  borderRadius: '20px',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  gap: '1rem',
+                  padding: '0.85rem 1.15rem',
+                  borderRadius: '18px',
                 }}
               >
                 {[
-                  { k: 'CHAMPIONSHIP TEE', v: '194 yds' },
-                  { k: 'ELEVATION', v: '-42 ft' },
-                  { k: 'GREEN DEPTH', v: '31 paces' },
+                  { k: 'TEE', v: '194 yds' },
+                  { k: 'DROP', v: '-42 ft' },
+                  { k: 'DEPTH', v: '31 paces' },
                 ].map((stat) => (
                   <div key={stat.k}>
-                    <span className="micro-label" style={{ display: 'block', fontSize: '0.56rem' }}>
+                    <span className="micro-label" style={{ display: 'block', fontSize: '0.54rem' }}>
                       {stat.k}
                     </span>
-                    <span style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--fg-primary)' }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--fg-primary)' }}>
                       {stat.v}
                     </span>
                   </div>
@@ -624,6 +647,48 @@ export function SignatureHoleStage() {
           </div>
         </div>
       </div>
+
+      <style>{`
+        .bluff-track-section {
+          height: 285vh;
+        }
+        .bluff-sticky-viewport {
+          height: 100vh;
+          height: 100svh;
+        }
+        .bluff-reticle-wrap {
+          top: 50%;
+        }
+        .bluff-badge-mobile {
+          display: none;
+        }
+        @media (max-width: 768px) {
+          .bluff-track-section {
+            height: 245vh;
+          }
+          .bluff-reticle-wrap {
+            top: 41%;
+          }
+          .bluff-reticle-svg {
+            width: 128px;
+            height: 128px;
+          }
+          .bluff-badge-desktop {
+            display: none;
+          }
+          .bluff-badge-mobile {
+            display: inline;
+          }
+          .bluff-specs-card {
+            width: 100%;
+          }
+        }
+        @media (max-width: 480px) {
+          .bluff-beat3-sub {
+            display: none;
+          }
+        }
+      `}</style>
     </section>
   );
 }

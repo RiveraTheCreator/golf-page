@@ -39,9 +39,9 @@ const PILLARS: EstatePillar[] = [
     mobileVideo: '/videos/hero-links-mobile.mp4?v=1080p',
     alt: 'Aerial view of Aurelia cliffside par-3 golf green at dawn with ocean mist',
     specs: [
-      { label: 'ARCHITECTURAL PAR', value: 'Par 72 · 7,420 Yards' },
-      { label: 'GREEN SPEED', value: '12.5 Stimp Tournament Spec' },
-      { label: 'TURF', value: 'Pure Fescue & Bentgrass' },
+      { label: 'ROUTING', value: 'Par 72 · 7,420 yds' },
+      { label: 'GREENS', value: '12.5 Stimp Spec' },
+      { label: 'TURF', value: 'Fescue & Bent' },
     ],
     dossier:
       'Carved directly into 140-foot coastal bluffs with zero housing developments in sight. Every hole plays into shifting Pacific thermals, offering five distinct teeing grounds and a dedicated 6-hole short-game sanctuary.',
@@ -57,9 +57,9 @@ const PILLARS: EstatePillar[] = [
     mobileVideo: '/videos/swing-impact-mobile.mp4?v=1080p',
     alt: 'Private dark-mode golf performance and biomechanics lab with forged iron',
     specs: [
-      { label: 'OPTICAL CAPTURE', value: '1,000 FPS Dual-Radar' },
-      { label: 'GROUND FORCE', value: '3D Dual Force Plates' },
-      { label: 'CLUB WORKSHOP', value: 'Bespoke Japanese Forging' },
+      { label: 'CAPTURE', value: '1,000 FPS Radar' },
+      { label: 'FORCE', value: '3D Dual Plates' },
+      { label: 'FORGE', value: 'Custom Japanese' },
     ],
     dossier:
       'Led by former PGA Tour biomechanists and master clubmakers. Patrons receive quarterly 3D kinematic baselines, real-time ball-flight dispersion modeling, and custom-ground wedges forged on-site.',
@@ -75,9 +75,9 @@ const PILLARS: EstatePillar[] = [
     mobileVideo: '/videos/clubhouse-dusk-mobile.mp4?v=1080p',
     alt: 'Modern board-formed concrete and glass golf clubhouse glowing at dusk',
     specs: [
-      { label: 'ACCOMMODATION', value: '14 Private Ocean Suites' },
-      { label: 'RECOVERY', value: 'Cryo, Sauna & Physio Suite' },
-      { label: 'DINING', value: '4,000-Bottle Vault & Hearth' },
+      { label: 'SUITES', value: '14 Ocean Villas' },
+      { label: 'RECOVERY', value: 'Cryo & Hydro Spa' },
+      { label: 'CELLAR', value: '4,000-Bottle Vault' },
     ],
     dossier:
       'Designed as a quiet monolithic sanctuary of board-formed concrete, smoked walnut, and frameless glass. Arrive by private aviation to Monterey Regional (MRY) with 12-minute chauffeur transfer.',
@@ -103,12 +103,44 @@ function PillarCard({
   sectionNear,
   onInspect,
 }: PillarCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [touchActive, setTouchActive] = useState(false);
 
   const targetScale = 1 - (total - 1 - index) * 0.04;
   const rangeStart = index / total;
   const scale = useTransform(progress, [rangeStart, 1], [1, targetScale]);
+
+  // Autonomous video preview on touch devices when card is centered in viewport (MotionSites Craft)
+  useEffect(() => {
+    if (prefersReduced) return;
+    if (!window.matchMedia('(hover: none)').matches) return;
+    const el = cardRef.current;
+    if (!el) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        const active = Boolean(entry?.isIntersecting && entry.intersectionRatio >= 0.55);
+        setTouchActive(active);
+        const v = videoRef.current;
+        if (!v) return;
+        if (active) {
+          if (!v.getAttribute('src')) {
+            v.src = selectAdaptiveVideo(pillar.video, pillar.mobileVideo);
+          }
+          v.muted = true;
+          v.play().catch(() => {});
+        } else {
+          v.pause();
+        }
+      },
+      { threshold: [0.2, 0.55, 0.8] }
+    );
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [pillar.mobileVideo, pillar.video, prefersReduced]);
 
   const handleEnter = () => {
     setIsHovered(true);
@@ -124,20 +156,25 @@ function PillarCard({
 
   const handleLeave = () => {
     setIsHovered(false);
-    videoRef.current?.pause();
+    if (!touchActive) {
+      videoRef.current?.pause();
+    }
   };
 
+  const showVideo = (isHovered || touchActive) && !prefersReduced;
   const resolvedSrc =
-    sectionNear || isHovered
+    sectionNear || showVideo
       ? selectAdaptiveVideo(pillar.video, pillar.mobileVideo)
       : undefined;
 
   return (
     <div
+      ref={cardRef}
+      className="pillar-sticky-slot"
       style={{
         position: 'sticky',
-        top: `calc(5.5rem + ${index * 26}px)`,
-        marginBottom: index === total - 1 ? 0 : '4rem',
+        top: `calc(5rem + ${index * 20}px)`,
+        marginBottom: index === total - 1 ? 0 : 'clamp(2.25rem, 5vw, 4rem)',
       }}
     >
       <motion.article
@@ -156,30 +193,16 @@ function PillarCard({
           willChange: 'transform',
         }}
       >
-        <div
-          className="pillar-card-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 1.15fr)',
-            minHeight: 'clamp(420px, 58vh, 560px)',
-          }}
-        >
-          <div
-            style={{
-              padding: 'clamp(1.75rem, 3.5vw, 3.25rem)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '2rem',
-            }}
-          >
+        <div className="pillar-card-grid">
+          {/* Left Content Column */}
+          <div className="pillar-card-body">
             <div>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: '1.75rem',
+                  marginBottom: 'clamp(1rem, 2.5vw, 1.75rem)',
                 }}
               >
                 <span className="micro-label" style={{ color: 'var(--accent-gold)' }}>
@@ -191,23 +214,24 @@ function PillarCard({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.35rem',
-                    color: isHovered && !prefersReduced ? 'var(--accent-gold)' : 'var(--fg-muted)',
+                    color: showVideo ? 'var(--accent-gold)' : 'var(--fg-muted)',
                     transition: 'color 220ms var(--ease-ui)',
+                    fontSize: '0.6rem',
                   }}
                 >
                   <Film size={12} />
-                  {isHovered && !prefersReduced ? '1080P REEL LIVE' : 'HOVER PREVIEW'}
+                  {showVideo ? 'REEL LIVE' : 'MOTION REEL'}
                 </span>
               </div>
 
               <h3
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: 'clamp(2rem, 3.2vw, 3rem)',
+                  fontSize: 'clamp(1.75rem, 3.2vw, 3rem)',
                   fontWeight: 400,
                   lineHeight: 1.04,
                   letterSpacing: '-0.02em',
-                  margin: '0 0 1rem 0',
+                  margin: '0 0 0.75rem 0',
                   color: 'var(--fg-primary)',
                 }}
               >
@@ -218,10 +242,10 @@ function PillarCard({
                 style={{
                   margin: 0,
                   color: 'var(--fg-secondary)',
-                  fontSize: '0.98rem',
-                  lineHeight: 1.6,
+                  fontSize: 'clamp(0.9rem, 1.2vw, 0.98rem)',
+                  lineHeight: 1.55,
                   fontWeight: 300,
-                  maxWidth: '34ch',
+                  maxWidth: '36ch',
                 }}
               >
                 {pillar.subtitle}
@@ -233,24 +257,24 @@ function PillarCard({
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                  gap: '1rem',
-                  paddingBlock: '1.25rem',
+                  gap: '0.75rem',
+                  paddingBlock: '1rem',
                   borderTop: '1px solid var(--border-subtle)',
                   borderBottom: '1px solid var(--border-subtle)',
-                  marginBottom: '1.5rem',
+                  marginBottom: '1.15rem',
                 }}
               >
                 {pillar.specs.map((spec) => (
                   <div key={spec.label}>
                     <span
                       className="micro-label"
-                      style={{ display: 'block', fontSize: '0.58rem', marginBottom: '0.3rem' }}
+                      style={{ display: 'block', fontSize: '0.54rem', marginBottom: '0.22rem' }}
                     >
                       {spec.label}
                     </span>
                     <span
                       style={{
-                        fontSize: '0.82rem',
+                        fontSize: '0.78rem',
                         fontWeight: 500,
                         color: 'var(--fg-primary)',
                       }}
@@ -265,16 +289,17 @@ function PillarCard({
                 id={`pillar-dossier-btn-${pillar.index}`}
                 type="button"
                 onClick={() => onInspect(pillar)}
-                className="glass-surface-interactive"
+                className="glass-surface-interactive pillar-inspect-btn"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '0.6rem',
-                  padding: '0.75rem 1.35rem',
+                  padding: '0.72rem 1.35rem',
                   minHeight: '44px',
                   borderRadius: 'var(--radius-pill)',
                   color: 'var(--fg-primary)',
-                  fontSize: '0.85rem',
+                  fontSize: '0.84rem',
                   fontWeight: 500,
                 }}
               >
@@ -284,19 +309,13 @@ function PillarCard({
             </div>
           </div>
 
-          <div
-            style={{
-              position: 'relative',
-              overflow: 'hidden',
-              minHeight: '280px',
-              backgroundColor: '#070A08',
-            }}
-          >
+          {/* Media Column (Top on Mobile, Right on Desktop) */}
+          <div className="pillar-card-media">
             <motion.img
               src={pillar.image}
               alt={pillar.alt}
               loading="lazy"
-              animate={{ scale: isHovered ? 1.04 : 1 }}
+              animate={{ scale: showVideo ? 1.04 : 1 }}
               transition={{ duration: 0.7, ease: EDITORIAL_EASE }}
               style={{
                 width: '100%',
@@ -320,7 +339,7 @@ function PillarCard({
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
-                  opacity: isHovered ? 1 : 0,
+                  opacity: showVideo ? 1 : 0,
                   transition: 'opacity 600ms var(--ease-editorial)',
                   pointerEvents: 'none',
                 }}
@@ -379,8 +398,8 @@ export function PillarsSection() {
             flexWrap: 'wrap',
             alignItems: 'flex-end',
             justifyContent: 'space-between',
-            gap: '1.5rem',
-            marginBottom: 'clamp(2.5rem, 5vw, 4rem)',
+            gap: '1.25rem',
+            marginBottom: 'clamp(2.25rem, 5vw, 4rem)',
           }}
         >
           <div>
@@ -390,11 +409,11 @@ export function PillarsSection() {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(2.4rem, 5vw, 4.25rem)',
+                fontSize: 'clamp(2.2rem, 5vw, 4.25rem)',
                 fontWeight: 400,
                 lineHeight: 1,
                 letterSpacing: '-0.025em',
-                margin: '0.75rem 0 0 0',
+                margin: '0.65rem 0 0 0',
               }}
             >
               Three Pillars of the Sanctuary
@@ -406,7 +425,7 @@ export function PillarsSection() {
               margin: 0,
               maxWidth: '28rem',
               color: 'var(--fg-muted)',
-              fontSize: '0.95rem',
+              fontSize: '0.94rem',
             }}
           >
             Every square meter of the $100M Monterey peninsula estate is built
@@ -442,13 +461,13 @@ export function PillarsSection() {
               position: 'fixed',
               inset: 0,
               zIndex: 110,
-              backgroundColor: 'rgba(7, 10, 8, 0.82)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
+              backgroundColor: 'rgba(7, 10, 8, 0.84)',
+              backdropFilter: 'blur(14px)',
+              WebkitBackdropFilter: 'blur(14px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '1.25rem',
+              padding: '1rem',
             }}
           >
             <motion.div
@@ -463,13 +482,14 @@ export function PillarsSection() {
               style={{
                 width: '100%',
                 maxWidth: '640px',
+                maxHeight: '90dvh',
+                overflowY: 'auto',
                 backgroundColor: 'var(--bg-elevated)',
                 border: '1px solid var(--border-strong)',
                 borderRadius: '24px',
-                overflow: 'hidden',
               }}
             >
-              <div style={{ position: 'relative', height: '250px', backgroundColor: '#070A08' }}>
+              <div style={{ position: 'relative', height: 'clamp(190px, 32vh, 250px)', backgroundColor: '#070A08' }}>
                 {prefersReduced ? (
                   <img
                     src={selectedPillar.image}
@@ -494,8 +514,8 @@ export function PillarsSection() {
                   className="glass-surface-interactive"
                   style={{
                     position: 'absolute',
-                    top: '1rem',
-                    right: '1rem',
+                    top: '0.85rem',
+                    right: '0.85rem',
                     width: '44px',
                     height: '44px',
                     borderRadius: '50%',
@@ -508,7 +528,12 @@ export function PillarsSection() {
                   <X size={18} />
                 </button>
               </div>
-              <div style={{ padding: 'clamp(1.5rem, 3.5vw, 2.25rem)' }}>
+              <div
+                style={{
+                  padding: 'clamp(1.35rem, 3.5vw, 2.25rem)',
+                  paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+                }}
+              >
                 <span className="micro-label" style={{ color: 'var(--accent-gold)' }}>
                   {selectedPillar.index} / {selectedPillar.tag} DOSSIER
                 </span>
@@ -516,31 +541,31 @@ export function PillarsSection() {
                   id="dossier-title"
                   style={{
                     fontFamily: 'var(--font-display)',
-                    fontSize: '2.15rem',
+                    fontSize: 'clamp(1.75rem, 4vw, 2.15rem)',
                     fontWeight: 400,
-                    margin: '0.5rem 0 1rem 0',
+                    margin: '0.45rem 0 0.85rem 0',
                   }}
                 >
                   {selectedPillar.title}
                 </h3>
-                <p style={{ color: 'var(--fg-secondary)', lineHeight: 1.65, margin: '0 0 1.5rem 0' }}>
+                <p style={{ color: 'var(--fg-secondary)', lineHeight: 1.62, margin: '0 0 1.35rem 0', fontSize: '0.94rem' }}>
                   {selectedPillar.dossier}
                 </p>
                 <div
                   style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                    gap: '1rem',
-                    paddingTop: '1.25rem',
+                    gap: '0.75rem',
+                    paddingTop: '1.1rem',
                     borderTop: '1px solid var(--border-subtle)',
                   }}
                 >
                   {selectedPillar.specs.map((spec) => (
                     <div key={spec.label}>
-                      <span className="micro-label" style={{ display: 'block', fontSize: '0.58rem' }}>
+                      <span className="micro-label" style={{ display: 'block', fontSize: '0.56rem' }}>
                         {spec.label}
                       </span>
-                      <span style={{ fontSize: '0.84rem', fontWeight: 500 }}>{spec.value}</span>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 500 }}>{spec.value}</span>
                     </div>
                   ))}
                 </div>
@@ -551,9 +576,36 @@ export function PillarsSection() {
       </AnimatePresence>
 
       <style>{`
+        .pillar-card-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.15fr);
+          min-height: clamp(420px, 58vh, 560px);
+        }
+        .pillar-card-body {
+          padding: clamp(1.4rem, 3.5vw, 3.25rem);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 1.5rem;
+        }
+        .pillar-card-media {
+          position: relative;
+          overflow: hidden;
+          min-height: 280px;
+          background-color: #070A08;
+        }
         @media (max-width: 860px) {
           .pillar-card-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: 1fr;
+            min-height: auto;
+          }
+          .pillar-card-media {
+            order: -1;
+            min-height: 205px;
+            max-height: 225px;
+          }
+          .pillar-inspect-btn {
+            width: 100%;
           }
         }
       `}</style>

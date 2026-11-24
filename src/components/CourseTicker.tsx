@@ -7,7 +7,7 @@ export function CourseTicker() {
         backgroundColor: '#0A0E0C',
         borderTop: '1px solid var(--border-subtle)',
         borderBottom: '1px solid var(--border-subtle)',
-        paddingBlock: '1.35rem',
+        paddingBlock: '1.15rem',
       }}
     >
       <div
@@ -17,7 +17,6 @@ export function CourseTicker() {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '1rem',
-          flexWrap: 'wrap',
         }}
       >
         <span className="micro-label" style={{ color: 'var(--fg-primary)' }}>
@@ -30,8 +29,9 @@ export function CourseTicker() {
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.6rem',
+            gap: '0.55rem',
             color: 'var(--fg-primary)',
+            minHeight: '36px',
           }}
         >
           <span>SCROLL TO EXPLORE</span>
@@ -50,8 +50,16 @@ export function CourseTicker() {
           </span>
         </a>
 
-        <span className="micro-label">TOUR-GRADE BIOMECHANICS</span>
+        <span className="micro-label ticker-right-desktop">TOUR-GRADE BIOMECHANICS</span>
       </div>
+
+      <style>{`
+        @media (max-width: 620px) {
+          .ticker-right-desktop {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }

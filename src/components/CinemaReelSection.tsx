@@ -18,11 +18,6 @@ interface CinemaReelSectionProps {
   onExpandClick: (chapterIndex: number) => void;
 }
 
-/**
- * Act IV — Crossfading Multi-Video Estate Atmosphere Switcher (1080p HD + Zero Contention).
- * Pre-warms lazily when within 1000px of viewport and preloads hovered tabs on demand
- * so full 1080p HD chapters switch smoothly without slowing initial page load.
- */
 export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -36,7 +31,6 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
   const [inViewport, setInViewport] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  // 1. Pre-warm active stream 1000px before entering viewport
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
@@ -54,7 +48,6 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
     return () => preObs.disconnect();
   }, []);
 
-  // 2. Track actual visibility to play/pause decoder cleanly
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
@@ -63,7 +56,6 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
         const visible = Boolean(entry?.isIntersecting);
         setInViewport(visible);
         if (visible) {
-          // Once visible, warm remaining chapters sequentially in background
           setWarmedIndices([0, 1, 2]);
         }
       },
@@ -128,7 +120,7 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
       id="cinema"
       ref={sectionRef}
       style={{
-        paddingBlock: 'clamp(5rem, 10vw, 8.5rem)',
+        paddingBlock: 'clamp(4.25rem, 10vw, 8.5rem)',
         backgroundColor: 'var(--bg-primary)',
         borderTop: '1px solid var(--border-subtle)',
       }}
@@ -140,8 +132,8 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
             flexWrap: 'wrap',
             alignItems: 'flex-end',
             justifyContent: 'space-between',
-            gap: '1.75rem',
-            marginBottom: 'clamp(2rem, 4vw, 3rem)',
+            gap: '1.35rem',
+            marginBottom: 'clamp(1.65rem, 4vw, 3rem)',
           }}
         >
           <div>
@@ -151,28 +143,26 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
             <h2
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(2.35rem, 4.8vw, 4.15rem)',
+                fontSize: 'clamp(2.15rem, 4.8vw, 4.15rem)',
                 fontWeight: 400,
                 lineHeight: 1,
                 letterSpacing: '-0.025em',
-                margin: '0.75rem 0 0 0',
+                margin: '0.65rem 0 0 0',
               }}
             >
               Living Atmosphere of the Estate
             </h2>
           </div>
 
-          {/* Multi-Video Chapter Tabs */}
+          {/* Single-row swipeable chapter pill rail on mobile */}
           <div
             role="tablist"
             aria-label="Estate film chapters"
-            className="glass-surface"
+            className="glass-surface pill-scroll-rail"
             style={{
-              display: 'inline-flex',
-              flexWrap: 'wrap',
-              padding: '0.3rem',
+              padding: '0.28rem',
               borderRadius: 'var(--radius-pill)',
-              gap: '0.25rem',
+              gap: '0.2rem',
             }}
           >
             {CINEMA_CHAPTERS.map((chapter, idx) => {
@@ -189,14 +179,16 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                   onClick={() => handleSelectChapter(idx)}
                   style={{
                     position: 'relative',
-                    padding: '0.6rem 1.15rem',
-                    minHeight: '44px',
+                    padding: '0.55rem 1rem',
+                    minHeight: '42px',
                     border: 'none',
                     borderRadius: 'var(--radius-pill)',
                     background: 'transparent',
                     color: isSelected ? '#070A08' : 'var(--fg-secondary)',
-                    fontSize: '0.8rem',
+                    fontSize: '0.78rem',
                     fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
                     zIndex: 1,
                     transition: 'color 220ms var(--ease-ui)',
                   }}
@@ -221,19 +213,8 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
           </div>
         </div>
 
-        {/* Rounded 16:9 Full HD Cinema Stage */}
-        <div
-          style={{
-            position: 'relative',
-            borderRadius: 'var(--radius-card)',
-            overflow: 'hidden',
-            border: '1px solid var(--border-strong)',
-            backgroundColor: '#050706',
-            aspectRatio: '16 / 9',
-            minHeight: '340px',
-            boxShadow: '0 28px 70px rgba(0, 0, 0, 0.6)',
-          }}
-        >
+        {/* Cinema Stage: 16:9 on Desktop, Portrait-Friendly 4:5 Card on Mobile */}
+        <div className="cinema-stage-viewport">
           {CINEMA_CHAPTERS.map((chapter, idx) => {
             const isActive = idx === activeIdx;
             const isWarmed = nearViewport && warmedIndices.includes(idx);
@@ -267,6 +248,7 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
+                    objectPosition: '54% center',
                     display: 'block',
                   }}
                 />
@@ -282,32 +264,32 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
               zIndex: 3,
               pointerEvents: 'none',
               background:
-                'linear-gradient(180deg, rgba(7,10,8,0.52) 0%, transparent 28%, transparent 52%, rgba(7,10,8,0.88) 100%)',
+                'linear-gradient(180deg, rgba(7,10,8,0.56) 0%, transparent 28%, transparent 48%, rgba(7,10,8,0.92) 100%)',
             }}
           />
 
           <div
             style={{
               position: 'absolute',
-              top: 'clamp(1rem, 2.5vw, 1.75rem)',
-              left: 'clamp(1rem, 2.5vw, 2rem)',
-              right: 'clamp(1rem, 2.5vw, 2rem)',
+              top: 'clamp(0.9rem, 2.5vw, 1.75rem)',
+              left: 'clamp(0.9rem, 2.5vw, 2rem)',
+              right: 'clamp(0.9rem, 2.5vw, 2rem)',
               zIndex: 4,
               display: 'flex',
-              flexWrap: 'wrap',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '0.75rem',
+              gap: '0.5rem',
             }}
           >
             <div
-              className="glass-surface"
+              className="glass-surface cinema-specs-pill"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.6rem',
-                padding: '0.45rem 0.95rem',
+                gap: '0.5rem',
+                padding: '0.42rem 0.85rem',
                 borderRadius: 'var(--radius-pill)',
+                minWidth: 0,
               }}
             >
               <span
@@ -316,14 +298,24 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                   height: '6px',
                   borderRadius: '50%',
                   backgroundColor: 'var(--accent-gold)',
+                  flexShrink: 0,
                 }}
               />
-              <span className="micro-label" style={{ fontSize: '0.6rem', color: 'var(--fg-primary)' }}>
+              <span
+                className="micro-label"
+                style={{
+                  fontSize: '0.58rem',
+                  color: 'var(--fg-primary)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {activeChapter.specs}
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0 }}>
               <button
                 id="cinema-soundscape-toggle"
                 type="button"
@@ -338,12 +330,14 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.45rem',
-                  padding: '0.5rem 0.95rem',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.85rem',
                   minHeight: '44px',
+                  minWidth: '44px',
                   borderRadius: 'var(--radius-pill)',
                   color: 'var(--fg-primary)',
-                  fontSize: '0.72rem',
+                  fontSize: '0.68rem',
                   fontFamily: 'var(--font-mono)',
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
@@ -354,7 +348,7 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                 ) : (
                   <VolumeX size={14} color="#8F9891" />
                 )}
-                <span>{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
+                <span className="cinema-sound-label">{soundEnabled ? 'Sound On' : 'Sound Off'}</span>
               </button>
 
               <button
@@ -366,18 +360,20 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
+                  justifyContent: 'center',
                   gap: '0.45rem',
-                  padding: '0.5rem 0.95rem',
+                  padding: '0.45rem 0.85rem',
                   minHeight: '44px',
+                  minWidth: '44px',
                   borderRadius: 'var(--radius-pill)',
                   color: 'var(--fg-primary)',
-                  fontSize: '0.72rem',
+                  fontSize: '0.68rem',
                   fontFamily: 'var(--font-mono)',
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                 }}
               >
-                <Maximize2 size={13} color="#C6A15B" />
+                <Maximize2 size={14} color="#C6A15B" />
                 <span className="cinema-expand-label">2.39:1 Theatre</span>
               </button>
             </div>
@@ -386,15 +382,15 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
           <div
             style={{
               position: 'absolute',
-              bottom: 'clamp(1.1rem, 3vw, 2.25rem)',
-              left: 'clamp(1.1rem, 3vw, 2.25rem)',
-              right: 'clamp(1.1rem, 3vw, 2.25rem)',
+              bottom: 'clamp(1rem, 3vw, 2.25rem)',
+              left: 'clamp(1rem, 3vw, 2.25rem)',
+              right: 'clamp(1rem, 3vw, 2.25rem)',
               zIndex: 4,
               display: 'flex',
               flexWrap: 'wrap',
               alignItems: 'flex-end',
               justifyContent: 'space-between',
-              gap: '1rem',
+              gap: '0.85rem',
             }}
           >
             <motion.div
@@ -404,27 +400,26 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
               transition={{ duration: 0.55, ease: EDITORIAL_EASE }}
               style={{ maxWidth: '36rem' }}
             >
-              <span className="micro-label" style={{ color: 'var(--accent-gold)' }}>
+              <span className="micro-label" style={{ color: 'var(--accent-gold)', fontSize: '0.6rem' }}>
                 CHAPTER {activeChapter.index} · {activeChapter.timecode}
               </span>
               <h3
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: 'clamp(1.65rem, 3vw, 2.5rem)',
+                  fontSize: 'clamp(1.55rem, 3vw, 2.5rem)',
                   fontWeight: 400,
-                  margin: '0.35rem 0 0.4rem 0',
+                  margin: '0.3rem 0 0.35rem 0',
                   lineHeight: 1.05,
                 }}
               >
                 {activeChapter.title}
               </h3>
               <p
-                className="cinema-caption-body"
                 style={{
                   margin: 0,
                   color: 'var(--fg-secondary)',
-                  fontSize: '0.92rem',
-                  lineHeight: 1.55,
+                  fontSize: 'clamp(0.84rem, 1.1vw, 0.92rem)',
+                  lineHeight: 1.5,
                 }}
               >
                 {activeChapter.caption}
@@ -440,7 +435,7 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
                   onMouseEnter={() => warmChapter(idx)}
                   onClick={() => handleSelectChapter(idx)}
                   style={{
-                    width: idx === activeIdx ? '36px' : '12px',
+                    width: idx === activeIdx ? '36px' : '14px',
                     height: '44px',
                     padding: 0,
                     background: 'transparent',
@@ -467,11 +462,24 @@ export function CinemaReelSection({ onExpandClick }: CinemaReelSectionProps) {
       </div>
 
       <style>{`
+        .cinema-stage-viewport {
+          position: relative;
+          border-radius: var(--radius-card);
+          overflow: hidden;
+          border: 1px solid var(--border-strong);
+          background-color: #050706;
+          aspect-ratio: 16 / 9;
+          min-height: 360px;
+          box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6);
+        }
         @media (max-width: 640px) {
-          .cinema-expand-label {
-            display: none;
+          .cinema-stage-viewport {
+            aspect-ratio: 4 / 4.75;
+            min-height: 410px;
+            border-radius: 22px;
           }
-          .cinema-caption-body {
+          .cinema-expand-label,
+          .cinema-sound-label {
             display: none;
           }
         }

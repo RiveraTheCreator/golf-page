@@ -26,7 +26,6 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
   const mediaScale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.78], [1, 0.12]);
 
-  // Off-screen IntersectionObserver auto-pause + reduced-motion compliance
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -61,16 +60,16 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
     <section
       id="top"
       ref={heroRef}
+      className="hero-section-root"
       style={{
         position: 'relative',
-        minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
         overflow: 'hidden',
         backgroundColor: 'var(--bg-primary)',
-        paddingTop: '7rem',
-        paddingBottom: 'clamp(2.25rem, 5vh, 3.75rem)',
+        paddingTop: 'clamp(5.75rem, 12vh, 7.5rem)',
+        paddingBottom: 'clamp(1.75rem, 4.5vh, 3.75rem)',
       }}
     >
       {/* Full-bleed Parallax Links Video Motion Plane */}
@@ -84,23 +83,21 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
           zIndex: 0,
         }}
       >
-        {/* High-res instant poster underneath so zero blank frame ever flashes */}
         <img
           src="/images/hero-links.jpg?v=1080p"
           alt=""
           fetchPriority="high"
+          className="hero-media-focal"
           style={{
             position: 'absolute',
             inset: 0,
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center 42%',
             display: 'block',
           }}
         />
 
-        {/* Muted H.264 +faststart 1080p Full HD (720p Mobile Adaptive) Twilight Links Cinema Loop */}
         <video
           ref={videoRef}
           poster="/images/hero-links.jpg?v=1080p"
@@ -110,13 +107,13 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
           playsInline
           preload="auto"
           onLoadedData={() => setVideoReady(true)}
+          className="hero-media-focal"
           style={{
             position: 'absolute',
             inset: 0,
             width: '100%',
             height: '100%',
             objectFit: 'cover',
-            objectPosition: 'center 42%',
             display: 'block',
             opacity: videoReady ? 1 : 0,
             transform: videoReady || prefersReduced ? 'scale(1)' : 'scale(1.05)',
@@ -133,7 +130,6 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
           <source src="/videos/hero-links.mp4?v=1080p" type="video/mp4" />
         </video>
 
-        {/* Progressive depth-of-field bottom blur + multi-stop obsidian scrim */}
         <div className="hero-progressive-blur" />
         <div className="scrim-hero-eased" />
       </motion.div>
@@ -151,25 +147,26 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.12, ease: EDITORIAL_EASE }}
-          className="micro-label"
+          className="micro-label hero-eyebrow"
           style={{
-            marginBottom: '1.15rem',
+            marginBottom: 'clamp(0.85rem, 2vw, 1.15rem)',
             color: 'var(--accent-gold)',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem',
+            gap: '0.65rem',
           }}
         >
           <span
             aria-hidden="true"
             style={{
-              width: '28px',
+              width: '24px',
               height: '1px',
               backgroundColor: 'var(--accent-gold)',
               display: 'inline-block',
+              flexShrink: 0,
             }}
           />
-          <span>MONTEREY PENINSULA · PRIVATE LINKS &amp; BIOMECHANICS</span>
+          <span>MONTEREY PENINSULA · PRIVATE SANCTUARY</span>
         </motion.div>
 
         <h1
@@ -177,7 +174,7 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
           style={{
             fontFamily: 'var(--font-display)',
             fontWeight: 400,
-            fontSize: 'clamp(2.95rem, 6.4vw, 6.35rem)',
+            fontSize: 'clamp(2.65rem, 6.4vw, 6.35rem)',
             lineHeight: 0.95,
             letterSpacing: '-0.03em',
             margin: 0,
@@ -206,12 +203,12 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
         <div
           className="hero-bottom-grid"
           style={{
-            marginTop: 'clamp(1.75rem, 3.5vw, 2.85rem)',
+            marginTop: 'clamp(1.25rem, 3.2vw, 2.85rem)',
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'flex-end',
             justifyContent: 'space-between',
-            gap: '2rem',
+            gap: 'clamp(1.25rem, 2.5vw, 2rem)',
           }}
         >
           <motion.p
@@ -221,8 +218,8 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
             style={{
               margin: 0,
               maxWidth: '33rem',
-              fontSize: 'clamp(0.98rem, 1.35vw, 1.15rem)',
-              lineHeight: 1.6,
+              fontSize: 'clamp(0.94rem, 1.35vw, 1.15rem)',
+              lineHeight: 1.56,
               color: 'var(--fg-secondary)',
               fontWeight: 300,
               textShadow: '0 2px 18px rgba(0, 0, 0, 0.42)',
@@ -242,7 +239,7 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
               display: 'flex',
               flexWrap: 'wrap',
               alignItems: 'center',
-              gap: '0.85rem',
+              gap: '0.75rem',
             }}
           >
             <MagneticButton
@@ -251,8 +248,9 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '0.65rem',
-                padding: '0.9rem 1.65rem',
+                padding: '0.85rem 1.55rem',
                 minHeight: '48px',
                 borderRadius: 'var(--radius-pill)',
                 backgroundColor: 'var(--fg-primary)',
@@ -275,13 +273,13 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >
                 <ArrowUpRight size={14} />
               </span>
             </MagneticButton>
 
-            {/* Secondary Cinema Showreel Button */}
             <button
               id="hero-watch-film-btn"
               type="button"
@@ -290,8 +288,9 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.65rem',
-                padding: '0.55rem 1.35rem 0.55rem 0.6rem',
+                justifyContent: 'center',
+                gap: '0.6rem',
+                padding: '0.55rem 1.3rem 0.55rem 0.6rem',
                 minHeight: '48px',
                 borderRadius: 'var(--radius-pill)',
                 fontSize: '0.88rem',
@@ -301,8 +300,8 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
             >
               <span
                 style={{
-                  width: '34px',
-                  height: '34px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '50%',
                   backgroundColor: 'rgba(198, 161, 91, 0.18)',
                   border: '1px solid rgba(198, 161, 91, 0.55)',
@@ -310,14 +309,15 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'var(--accent-gold)',
+                  flexShrink: 0,
                 }}
               >
-                <Play size={13} fill="#C6A15B" />
+                <Play size={12} fill="#C6A15B" />
               </span>
               <span>Watch Estate Film</span>
               <span
                 className="micro-label"
-                style={{ fontSize: '0.62rem', color: 'var(--fg-muted)', marginLeft: '0.15rem' }}
+                style={{ fontSize: '0.62rem', color: 'var(--fg-muted)', marginLeft: '0.1rem' }}
               >
                 01:12
               </span>
@@ -331,39 +331,32 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
           animate={{ opacity: 1 }}
           transition={{ duration: 0.9, delay: 0.85, ease: EDITORIAL_EASE }}
           style={{
-            marginTop: 'clamp(1.85rem, 3.8vw, 3rem)',
-            paddingTop: '1.2rem',
+            marginTop: 'clamp(1.4rem, 3.5vw, 3rem)',
+            paddingTop: '1.1rem',
             borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1.25rem',
+            gap: '1rem',
           }}
         >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
-              gap: '1.25rem',
-              flex: '1 1 520px',
-            }}
-          >
+          <div className="hero-stats-strip">
             {[
-              { label: 'CHAMPIONSHIP ROUTING', value: 'Par 72 · 7,420 yds' },
-              { label: 'PATRONAGE CAP', value: '150 Founding Members' },
-              { label: 'ESTATE ENDOWMENT', value: '$100M Private Capital' },
+              { label: 'ROUTING', value: 'Par 72 · 7,420 yds' },
+              { label: 'PATRONAGE CAP', value: '150 Patrons' },
+              { label: 'ENDOWMENT', value: '$100M Capital' },
             ].map((item) => (
               <div
                 key={item.label}
-                style={{ display: 'flex', flexDirection: 'column', gap: '0.22rem' }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}
               >
-                <span className="micro-label" style={{ fontSize: '0.6rem' }}>
+                <span className="micro-label" style={{ fontSize: '0.58rem' }}>
                   {item.label}
                 </span>
                 <span
                   style={{
-                    fontSize: '0.92rem',
+                    fontSize: '0.88rem',
                     fontWeight: 500,
                     color: 'var(--fg-primary)',
                   }}
@@ -381,37 +374,73 @@ export function HeroSection({ onApplyClick, onWatchFilmClick }: HeroSectionProps
               aria-label={isPlaying ? 'Pause background links video' : 'Play background links video'}
               aria-pressed={!isPlaying}
               onClick={() => setUserPaused((p) => !p)}
-              className="glass-surface-interactive"
+              className="glass-surface-interactive hero-motion-btn"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.5rem 0.95rem',
+                gap: '0.45rem',
+                padding: '0.45rem 0.9rem',
                 minHeight: '44px',
                 minWidth: '44px',
                 borderRadius: 'var(--radius-pill)',
                 color: 'var(--fg-secondary)',
-                fontSize: '0.72rem',
+                fontSize: '0.68rem',
                 fontFamily: 'var(--font-mono)',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
               }}
             >
               {isPlaying ? <Pause size={13} color="#C6A15B" /> : <Play size={13} color="#C6A15B" />}
-              <span>{isPlaying ? 'Motion Live' : 'Motion Paused'}</span>
+              <span>{isPlaying ? 'Motion Live' : 'Paused'}</span>
             </button>
           )}
         </motion.div>
       </motion.div>
 
       <style>{`
-        @media (max-width: 560px) {
+        .hero-section-root {
+          min-height: 100vh;
+          min-height: 100svh;
+        }
+        .hero-media-focal {
+          object-position: center 42%;
+        }
+        .hero-stats-strip {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.25rem;
+          flex: 1 1 480px;
+        }
+        @media (max-width: 768px) {
+          .hero-media-focal {
+            object-position: 60% 36%;
+          }
+          .hero-eyebrow {
+            font-size: 0.6rem;
+          }
+        }
+        @media (max-width: 580px) {
           .hero-cta-row {
             width: 100%;
           }
           .hero-cta-row > * {
             flex: 1 1 100%;
+          }
+          .hero-stats-strip {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.65rem;
+            flex: 1 1 100%;
+          }
+          .hero-stats-strip span:last-child {
+            font-size: 0.8rem !important;
+          }
+          .hero-motion-btn {
+            padding: 0 !important;
+            width: 44px;
             justify-content: center;
+          }
+          .hero-motion-btn span {
+            display: none;
           }
         }
       `}</style>
